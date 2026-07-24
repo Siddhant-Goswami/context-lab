@@ -1,5 +1,5 @@
 /* ============================================================
-   THE CONTEXT LAB — content
+   THE CONTEXT LAB: content
    Context Engineering → Advanced RAG, as a derivation.
    Part 1 builds the map. The bridge opens the L3 box.
    Twelve exercises run every part of Sage's retrieval brain
@@ -64,35 +64,35 @@ const MEANING = {
 const BASE_QA = [
   { q:'What is an API?', ok:true,
     a:'An API is a contract that lets one program call another: you send a request in an agreed shape, you get a response in an agreed shape.',
-    note:'Correct — this was all over the training data. L0 passes. Ship it, buy nothing.' },
+    note:'Correct: this was all over the training data. L0 passes. Ship it, buy nothing.' },
   { q:'Which track should I choose at 100xEngineers?', ok:false,
     a:'Great question! The Applied AI track is ideal for beginners, while the GenAI Engineering track suits developers. I’d recommend the Applied AI track for the strongest career outcomes.',
-    note:'Fluent, specific, confident — and invented. The real track details were never in the training data. It is guessing.' },
+    note:'Fluent, specific, confident, and invented. The real track details were never in the training data. It is guessing.' },
   { q:'What is Sage’s refund policy?', ok:false,
     a:'Sage offers a standard 30-day money-back guarantee on all purchases, no questions asked.',
-    note:'There is no such policy — the model has never seen your internal docs. Same disease: a supply problem, not an intelligence problem.' },
+    note:'There is no such policy: the model has never seen your internal docs. Same disease: a supply problem, not an intelligence problem.' },
 ];
 
 /* ---------- the four buckets (guess-then-flip) ---------- */
 const BUCKETS4 = [
-  { gap:'Knowledge gap', symptom:'Stable facts never published: tracks, policies, internal docs.', fix:'In-context (L1)', why:'The information is static, small, reusable — put it in the prompt.' },
-  { gap:'Freshness gap', symptom:'Changes between requests: weather, order status, inventory.', fix:'Tool calling (L2)', why:'It is stale the moment you save the file — fetch it at request time.' },
+  { gap:'Knowledge gap', symptom:'Stable facts never published: tracks, policies, internal docs.', fix:'In-context (L1)', why:'The information is static, small, reusable: put it in the prompt.' },
+  { gap:'Freshness gap', symptom:'Changes between requests: weather, order status, inventory.', fix:'Tool calling (L2)', why:'It is stale the moment you save the file: fetch it at request time.' },
   { gap:'Scale gap', symptom:'The information exists but you cannot afford to send all of it, every time.', fix:'RAG (L3)', why:'A selection strategy: which few pieces deserve the window for this question.' },
-  { gap:'Behaviour gap', symptom:'Right knowledge, wrong format or reasoning style.', fix:'Instructions + few-shot', why:'Not a supply problem at all — show it how, don’t feed it more.' },
+  { gap:'Behaviour gap', symptom:'Right knowledge, wrong format or reasoning style.', fix:'Instructions + few-shot', why:'Not a supply problem at all: show it how, don’t feed it more.' },
 ];
 
 /* ---------- the four layers ---------- */
 const LAYERS = [
   { lb:'L0', name:'Base model', d:'Training knowledge alone: “What is an API?”', cost:'free' },
-  { lb:'L1', name:'In-context: put it in the room', d:'Static docs, instructions, few-shot examples in the prompt. Closes buckets 1 and 4. One page of track info turns the hallucinated recommendation into a correct answer. The token cost repeats on every request — fine for one page, ruinous for a thousand.', cost:'prompt tokens, per request' },
+  { lb:'L1', name:'In-context: put it in the room', d:'Static docs, instructions, few-shot examples in the prompt. Closes buckets 1 and 4. One page of track info turns the hallucinated recommendation into a correct answer. The token cost repeats on every request, fine for one page, ruinous for a thousand.', cost:'prompt tokens, per request' },
   { lb:'L2', name:'Tools: fetch it at request time', d:'“Weather right now?” cannot live in a system prompt. Closes bucket 2. But “hourly weather for ten years, analyse the patterns” breaks it: the API can return millions of records, the model cannot receive them. The tool did its job; the failure is the handoff.', cost:'API calls + latency' },
-  { lb:'L3', name:'RAG: a bouncer for the context window', d:'Not a way to access information — tools already do that. A selection strategy: which few pieces of a large base deserve the window for this question. Closes bucket 3. Chunking and indexing are paid once, at indexing time; sending everything is paid on every query, forever.', cost:'infrastructure + indexing', hot:true },
+  { lb:'L3', name:'RAG: a bouncer for the context window', d:'Not a way to access information: tools already do that. A selection strategy: which few pieces of a large base deserve the window for this question. Closes bucket 3. Chunking and indexing are paid once, at indexing time; sending everything is paid on every query, forever.', cost:'infrastructure + indexing', hot:true },
 ];
 
 /* ---------- C.W. AND B. truth-table game ---------- */
 const TT_CASES = [
   { cw:true,  b:true,  label:'Fits the window · affordable to repeat', send:true,
-    why:'Both constraints pass — send it directly. In-context for static, full tool output for dynamic.' },
+    why:'Both constraints pass: send it directly. In-context for static, full tool output for dynamic.' },
   { cw:true,  b:false, label:'Fits the window · too expensive to repeat', send:false,
     why:'Fitting is not the same as affordable. Paying that token bill on every request, forever, is the economic ceiling failing.' },
   { cw:false, b:true,  label:'Affordable · physically will not fit', send:false,
@@ -115,7 +115,7 @@ const BUCKETS7 = [
   { n:1, name:'Vocabulary gap', d:'The student and the corpus mean the same thing and share no letters.', ex:'Exercise 2' },
   { n:2, name:'Bad search key', d:'The query is vague, rambling, or phrased in words the corpus never uses.', ex:'Exercise 5' },
   { n:3, name:'Orphaned chunk', d:'A retrieved chunk lost its document, section, and address at ingestion.', ex:'Exercise 3' },
-  { n:4, name:'Right chunk, wrong rank', d:'The answer came back — below what the generator actually reads.', ex:'Exercise 6' },
+  { n:4, name:'Right chunk, wrong rank', d:'The answer came back, below what the generator actually reads.', ex:'Exercise 6' },
   { n:5, name:'Needs a second search', d:'The first result only reveals what to search next; one pass can never close it.', ex:'Exercise 8' },
   { n:6, name:'Relationship, not passage', d:'The answer lives across documents, in the edges, inside no single chunk.', ex:'Exercise 7' },
   { n:7, name:'Dirty corpus', d:'Ingestion sliced or polluted the chunks before any search ever ran.', ex:'Exercise 3' },
@@ -189,7 +189,7 @@ const LOOP_HOPS = [
     next:null },
 ];
 const LOOP_FRAGS = ['the AAA progression exists','which module fits this student’s track','when they’ll be ready (prereqs + weeks)'];
-const LOOP_ANSWER = '“It depends on your track: no-code students reach agentic automation in Module 3 (weeks 9–14); code students build their first agent in Module 2, L08. Either way you’ll need tool calling (L07) and the ReAct loop first — that’s the AAA path from assistant to autonomous.”';
+const LOOP_ANSWER = '“It depends on your track: no-code students reach agentic automation in Module 3 (weeks 9–14); code students build their first agent in Module 2, L08. Either way you’ll need tool calling (L07) and the ReAct loop first; that’s the AAA path from assistant to autonomous.”';
 
 /* ---------- ex 9: the router ---------- */
 const ROUTER_Q = [
@@ -251,7 +251,7 @@ const ZOOM_ROWS = [
 ];
 
 /* ============================================================
-   MODULES — the linear player
+   MODULES: the linear player
    ============================================================ */
 const MODULES = [
 
@@ -260,24 +260,24 @@ const MODULES = [
   { t:'intro',
     pill:'100xEngineers · Context Engineering → Advanced RAG',
     title:'Confident. Fluent.\nCompletely wrong.',
-    subtitle:'One lecture, one derivation: a decision framework for what context to buy and when — then twelve hands-on exercises inside the RAG box. Everything runs right here in your browser: no code, no API keys, same lab for everyone.' },
+    subtitle:'One lecture, one derivation: a decision framework for what context to buy and when, then twelve hands-on exercises inside the RAG box. Everything runs right here in your browser: no code, no API keys, same lab for everyone.' },
   { t:'basemodel',
     title:'Ask the base model.',
     subtitle:'Three student questions. No extra context. Watch which ones it can actually answer.' },
   { t:'question', eyebrow:'The first question',
     q:'Can the model already answer correctly,\n<em>without</em> extra context?',
-    sub:'If yes — stop. Do not solve a problem that does not exist. Every technique in this lab costs money, latency, and maintenance.' },
+    sub:'If yes, stop. Do not solve a problem that does not exist. Every technique in this lab costs money, latency, and maintenance.' },
   { t:'reveal', eyebrow:'The diagnosis',
     title:'A supply problem,\nnot an intelligence problem.',
-    body:'The track details were never in the training data. <strong>The information was never in the room.</strong> So the first question is never “which technique?” — it is “what exactly is missing, and what is the cheapest way to put it in the room?” This lecture is one procedure for answering that, and you are going to derive every box of it.' },
+    body:'The track details were never in the training data. <strong>The information was never in the room.</strong> So the first question is never “which technique?” It is “what exactly is missing, and what is the cheapest way to put it in the room?” This lecture is one procedure for answering that, and you are going to derive every box of it.' },
 ]},
 
 /* ---------- 1 · THE MAP ---------- */
 { id:'map', title:'Part 1 · The map', icon:'map', steps:[
   { t:'reveal', eyebrow:'The Map · the referee',
     title:'The golden set is the referee.',
-    body:'Write down real user questions. For each, record: <strong>expected answer, current answer, missing information, why it fails</strong>. This is not a checkbox you file away — you re-run it after <strong>every</strong> layer you add. The failing subset is your roadmap; a passing score is your stop condition.',
-    art:'<div class="quotecard">Without it, every architecture decision is <b>“it seems better”</b> — the sentence that has burned more budgets than any bug. You will meet it again inside RAG, wearing the same disguise.</div>' },
+    body:'Write down real user questions. For each, record: <strong>expected answer, current answer, missing information, why it fails</strong>. This is not a checkbox you file away; you re-run it after <strong>every</strong> layer you add. The failing subset is your roadmap; a passing score is your stop condition.',
+    art:'<div class="quotecard">Without it, every architecture decision is <b>“it seems better”</b>, the sentence that has burned more budgets than any bug. You will meet it again inside RAG, wearing the same disguise.</div>' },
   { t:'buckets',
     title:'Every failure lands in one of four buckets.',
     subtitle:'Each bucket names exactly one fix. Guess the fix, then flip. Diagnosis becomes mechanical, not vibes.' },
@@ -286,7 +286,7 @@ const MODULES = [
     subtitle:'Each layer costs more to build, run, and maintain than the one below. You add a layer only when a bucket forces you to.' },
   { t:'ttgame',
     title:'The rule: send directly only when C.W. AND B.',
-    subtitle:'C.W. — it fits the context window, the hard ceiling. B. — it is reasonable to send on every request, forever, the economic ceiling. Call each case: send, or retrieve?' },
+    subtitle:'C.W.: it fits the context window, the hard ceiling. B.: it is reasonable to send on every request, forever, the economic ceiling. Call each case: send, or retrieve?' },
   { t:'routegame', gate:true,
     title:'You are the router.',
     subtitle:'Route each query to the cheapest layer that can pass. Overspending is a failure too: a layer the eval never demanded is pure cost.' },
@@ -306,29 +306,29 @@ const MODULES = [
     subtitle:'Zoom into the scale gap and it splits, the way a spectral line splits under a stronger instrument. Same diagnosis discipline, finer instrument.' },
   { t:'l3map',
     title:'One box on the map,\ntwelve rungs inside it.',
-    subtitle:'The procedure does not change; only the nouns do. Golden set becomes golden pairs. Four buckets become seven. A layer becomes a rung. You buy rungs one at a time, named by the biggest failing bucket — never by vibes.' },
+    subtitle:'The procedure does not change; only the nouns do. Golden set becomes golden pairs. Four buckets become seven. A layer becomes a rung. You buy rungs one at a time, named by the biggest failing bucket, never by vibes.' },
 ]},
 
 /* ---------- 3 · EX 1+2 · THE FLOOR ---------- */
 { id:'floor', title:'Ex 1–2 · The floor', icon:'search', steps:[
   { t:'exsearch', eyebrow:'Exercise 1 of 12 · the floor of L3',
     title:'Search that costs nothing.',
-    subtitle:'Your curriculum lives in a wiki no model was trained on, so Sage — the student support bot — must retrieve before it answers. This is a real mini-Sage over 12 curriculum pages, using the cheapest retrieval there is: keyword matching (BM25). Try the chips, or type your own, and read “behind the scenes”.' },
+    subtitle:'Your curriculum lives in a wiki no model was trained on, so Sage (the student support bot) must retrieve before it answers. This is a real mini-Sage over 12 curriculum pages, using the cheapest retrieval there is: keyword matching (BM25). Try the chips, or type your own, and read “behind the scenes”.' },
   { t:'reveal', eyebrow:'The MVP rule',
     title:'The cheap floor answers ~75%\nof real student queries.',
-    body:'Zero keys, zero GPU, effectively free — and every match is explainable: these exact words, in this exact document. Everything else in this lab must <strong>earn its place</strong> against it. In ~90% of MVPs a simple index plus metadata is cheaper <em>and faster</em> than any embedding engine.' },
+    body:'Zero keys, zero GPU, effectively free, and every match is explainable: these exact words, in this exact document. Everything else in this lab must <strong>earn its place</strong> against it. In ~90% of MVPs a simple index plus metadata is cheaper <em>and faster</em> than any embedding engine.' },
   { t:'exmeaning', eyebrow:'Exercise 2 of 12 · bucket 1 · vocabulary gap',
     title:'The query that breaks the floor.',
-    subtitle:'Submit the pre-loaded query. Zero results — the corpus never says “lying”; it says “hallucination”, “grounding”. The student and the corpus mean the same thing and share no letters. Then flip on Meaning mode and search again.',
+    subtitle:'Submit the pre-loaded query. Zero results: the corpus never says “lying”; it says “hallucination”, “grounding”. The student and the corpus mean the same thing and share no letters. Then flip on Meaning mode and search again.',
     fail:'✗ “make the bot stop lying”' },
   { t:'quiz', gate:true, eyebrow:'Checkpoint',
     prompt:'When do you buy embeddings?',
     options:[
       { label:'When your failing queries look like the vocabulary gap', correct:true,
-        fb:'On the real eval set the free floor scores 88% on keyword-style queries but 32% on meaning-style ones. You buy embeddings when YOUR failures look like that split — not because they’re modern.' },
-      { label:'Always — embeddings are the modern default for RAG',
+        fb:'On the real eval set the free floor scores 88% on keyword-style queries but 32% on meaning-style ones. You buy embeddings when YOUR failures look like that split, not because they’re modern.' },
+      { label:'Always: embeddings are the modern default for RAG',
         fb:'That is the anti-pattern from Part 1 wearing new clothes. The floor answers ~75% for free; buy the rung your failing bucket names.' },
-      { label:'Never — BM25 plus metadata is always enough',
+      { label:'Never: BM25 plus metadata is always enough',
         fb:'“make the bot stop lying” just returned zero results with the answer sitting in the corpus. The ~25% meaning-style failures are real; the question is only when they justify the spend.' },
     ]},
 ]},
@@ -337,13 +337,13 @@ const MODULES = [
 { id:'ingest', title:'Ex 3 · Ingestion', icon:'scissors', steps:[
   { t:'exchunks', eyebrow:'Exercise 3 of 12 · bucket 7 · dirty corpus',
     title:'Everything rests on ingestion.',
-    subtitle:'Before any search, documents get cut into chunks — the units retrieval actually returns. Two ways to cut. Try naive: every 180 characters, wherever that lands. The red fragments are thoughts sliced mid-sentence: retrieval will return them, generation will cite them, and you’ll ship fluent, source-tagged garbage.' },
+    subtitle:'Before any search, documents get cut into chunks, the units retrieval actually returns. Two ways to cut. Try naive: every 180 characters, wherever that lands. The red fragments are thoughts sliced mid-sentence: retrieval will return them, generation will cite them, and you’ll ship fluent, source-tagged garbage.' },
   { t:'exorphan', eyebrow:'Exercise 3, continued · bucket 3 · orphaned chunk',
     title:'The orphan demo.',
-    subtitle:'Search the locked query. You retrieve “then redeploy with the flag enabled” — a chunk that lost its document, its lecture, its flag. Technically retrieved, practically useless. Then stamp passports: one situating sentence prepended to every chunk at indexing time. Search again.',
+    subtitle:'Search the locked query. You retrieve “then redeploy with the flag enabled”, a chunk that lost its document, its lecture, its flag. Technically retrieved, practically useless. Then stamp passports: one situating sentence prepended to every chunk at indexing time. Search again.',
     fail:'✗ “Which flag do I redeploy with?”' },
   { t:'reveal', eyebrow:'The receipt',
-    title:'Pay at indexing time, once —\nnot at query time, forever.',
+    title:'Pay at indexing time, once,\nnot at query time, forever.',
     body:'No architecture downstream of ingestion recovers information ingestion destroyed. Garbage in isn’t garbage out; it’s <strong>cited</strong> garbage out, which is worse. Anthropic measured the passport move at <strong>−35% failed retrievals</strong> (−49% combined with a contextual keyword index, −67% with a reranker on top).' },
 ]},
 
@@ -354,14 +354,14 @@ const MODULES = [
     sub:'An exact term AND a fuzzy scope in one query. Keyword search nails the term; meaning search nails the scope. Which one do you trust?' },
   { t:'exfusion',
     title:'Two searchers, one answer list.',
-    subtitle:'Trust each list alone and you drop half the signal — the document you actually want (★) is #3 in one list and #2 in the other, never #1. So merge. But BM25 scores are unbounded term arithmetic and cosine scores live in −1…1 — adding them is adding rupees to dollars. What do the lists share? Not scores. Ranks.' },
+    subtitle:'Trust each list alone and you drop half the signal: the document you actually want (★) is #3 in one list and #2 in the other, never #1. So merge. But BM25 scores are unbounded term arithmetic and cosine scores live in −1…1; adding them is adding rupees to dollars. What do the lists share? Not scores. Ranks.' },
   { t:'quiz', gate:true, eyebrow:'Checkpoint',
     prompt:'Why does RRF fuse ranks instead of scores?',
     options:[
       { label:'Ranks are the only honest common currency between the two lists', correct:true,
-        fb:'BM25 and cosine scores live on incompatible scales; no exchange rate exists. Ranks are comparable by construction. Reciprocal Rank Fusion — score = Σ 1/(60+rank) — is the entire “hybrid search” checkbox in every vector database: one loop.' },
+        fb:'BM25 and cosine scores live on incompatible scales; no exchange rate exists. Ranks are comparable by construction. Reciprocal Rank Fusion (score = Σ 1/(60+rank)) is the entire “hybrid search” checkbox in every vector database: one loop.' },
       { label:'Ranks are faster to compute than scores',
-        fb:'Both are already computed by the time you fuse. Speed isn’t the issue — comparability is: the two score scales share no exchange rate.' },
+        fb:'Both are already computed by the time you fuse. Speed isn’t the issue; comparability is: the two score scales share no exchange rate.' },
       { label:'Scores are less accurate than ranks',
         fb:'Within one list, scores carry MORE information than ranks. The problem is across lists: two different scales, no conversion. Ranks are the shared unit.' },
     ]},
@@ -371,25 +371,25 @@ const MODULES = [
 { id:'rewrite', title:'Ex 5 · Fix the query', icon:'languages', steps:[
   { t:'exrewrite', eyebrow:'Exercise 5 of 12 · buckets 1 & 2 · bad search key',
     title:'Fix the query before you search.',
-    subtitle:'The corpus speaks of “AAA agent progression” and “agentic workflows”. The query as typed is simply a bad search key — and why should a student speak your corpus’s language? Put a cheap LLM in front with one job: translation. Click Rewrite, then try the strangest trick in RAG: HyDE.',
+    subtitle:'The corpus speaks of “AAA agent progression” and “agentic workflows”. The query as typed is simply a bad search key, and why should a student speak your corpus’s language? Put a cheap LLM in front with one job: translation. Click Rewrite, then try the strangest trick in RAG: HyDE.',
     fail:'✗ “When will I learn how to automate my job?”' },
   { t:'reveal', eyebrow:'The geometry',
     title:'Answers live near answers.\nQuestions don’t.',
-    body:'HyDE asks an LLM to <em>hallucinate a plausible answer</em> — factually unreliable! — and searches with <strong>that</strong> instead of the question. It works because of geometry: a fake answer is phrased like the real answers, so it lands inside the right cluster. Factually worthless, geometrically precious. And the rewriter’s dictionary — the <strong>lexicon</strong>, two columns of “what students say → what the corpus says”, harvested from your own failed queries — is the highest-ROI component in the whole system.' },
+    body:'HyDE asks an LLM to <em>hallucinate a plausible answer</em> (factually unreliable!) and searches with <strong>that</strong> instead of the question. It works because of geometry: a fake answer is phrased like the real answers, so it lands inside the right cluster. Factually worthless, geometrically precious. And the rewriter’s dictionary (the <strong>lexicon</strong>, two columns of “what students say → what the corpus says”, harvested from your own failed queries) is the highest-ROI component in the whole system.' },
 ]},
 
 /* ---------- 7 · EX 6 · RERANK ---------- */
 { id:'rerank', title:'Ex 6 · Rerank', icon:'list-ordered', steps:[
   { t:'exrerank', eyebrow:'Exercise 6 of 12 · bucket 4 · right chunk, wrong rank',
     title:'Retrieval worked.\nThe answer still failed.',
-    subtitle:'“What is MCP and what problem does it solve?” — the perfect chunk came back at position 5, and the generator reads the top 3. Fast retrieval is a bi-encoder: every chunk embedded alone, months before your query existed. Your turn to be the fix: reorder the candidates so the best answer is #1, then run the cross-encoder and compare.' },
+    subtitle:'“What is MCP and what problem does it solve?”: the perfect chunk came back at position 5, and the generator reads the top 3. Fast retrieval is a bi-encoder: every chunk embedded alone, months before your query existed. Your turn to be the fix: reorder the candidates so the best answer is #1, then run the cross-encoder and compare.' },
   { t:'quiz', gate:true, eyebrow:'Checkpoint',
     prompt:'Why not just cross-encode the whole corpus for every query?',
     options:[
-      { label:'One model pass per query-chunk pair, at query time — unshippable at corpus scale', correct:true,
+      { label:'One model pass per query-chunk pair, at query time, unshippable at corpus scale', correct:true,
         fb:'951 chunks × every query is latency and money you can’t ship. Hence the staging: retrieve wide & cheap (~20 candidates), judge narrow & expensive (cross-encode those, keep 6). The written test screens thousands; the interview panel sees twenty.' },
       { label:'Cross-encoders are less accurate than bi-encoders',
-        fb:'The opposite: reading query and chunk together is MORE accurate — you just proved it by hand. What it can’t be is cheap.' },
+        fb:'The opposite: reading query and chunk together is MORE accurate; you just proved it by hand. What it can’t be is cheap.' },
       { label:'Cross-encoders can’t handle long documents',
         fb:'Length isn’t the wall. The wall is one forward pass per (query, chunk) pair, at query time, across the whole corpus.' },
     ]},
@@ -402,58 +402,58 @@ const MODULES = [
     sub:'Search all you want: no chunk contains this sentence. The answer is a pattern ACROSS documents. Similarity search returns nodes; the question is about the wires.' },
   { t:'exgraph',
     title:'Read the answer off the edges.',
-    subtitle:'Wiki pages already declare their edges as [[wikilinks]], so the graph costs nothing to build — in the real Sage: 286 nodes, 855 edges, zero extraction cost. Click the tool-calling node; its incoming edges light up. Then widen by one hop and read your answer straight off the graph.' },
+    subtitle:'Wiki pages already declare their edges as [[wikilinks]], so the graph costs nothing to build; in the real Sage: 286 nodes, 855 edges, zero extraction cost. Click the tool-calling node; its incoming edges light up. Then widen by one hop and read your answer straight off the graph.' },
 ]},
 
 /* ---------- 9 · EX 8 · THE LOOP ---------- */
 { id:'loop', title:'Ex 8 · The loop', icon:'repeat', steps:[
   { t:'exloop', eyebrow:'Exercise 8 of 12 · bucket 5 · needs a second search',
     title:'When one search can never be enough.',
-    subtitle:'Even perfectly rewritten, one retrieval pass can’t answer this: the first result only reveals what to look for next. You are the agent — run the first search, read what came back, and decide: answer now, or search again? Try answering early. Every hop costs money; the invoice is ticking.',
-    fail:'✗ “When will I learn to automate my job?” — properly, this time' },
+    subtitle:'Even perfectly rewritten, one retrieval pass can’t answer this: the first result only reveals what to look for next. You are the agent: run the first search, read what came back, and decide: answer now, or search again? Try answering early. Every hop costs money; the invoice is ticking.',
+    fail:'✗ “When will I learn to automate my job?”, properly this time' },
   { t:'reveal', eyebrow:'The architectural change',
     title:'Retrieval stops being a step.\nIt becomes a tool in a loop.',
-    body:'That word — <em>realise</em> — is the whole change. Search, read, decide: it’s the tool-calling loop from the Agents module, pointed at your own corpus instead of the weather API. The stack closes into a circle: retrieval becomes <code>search_knowledge_base</code>, exactly as promised. And every loop needs a done-condition and a bound (Sage stops at 4 hops), or the ₹80,000 invoice returns with interest.' },
+    body:'That word, <em>realise</em>, is the whole change. Search, read, decide: it’s the tool-calling loop from the Agents module, pointed at your own corpus instead of the weather API. The stack closes into a circle: retrieval becomes <code>search_knowledge_base</code>, exactly as promised. And every loop needs a done-condition and a bound (Sage stops at 4 hops), or the ₹80,000 invoice returns with interest.' },
 ]},
 
 /* ---------- 10 · EX 9 · THE ROUTER ---------- */
 { id:'router', title:'Ex 9 · The router', icon:'signpost', steps:[
   { t:'exrouter', eyebrow:'Exercise 9 of 12 · the failure is the invoice',
     title:'The receptionist.',
-    subtitle:'“What is RAG?” sent through the agentic loop: four LLM hops, real money, for a lookup the free floor answers instantly. Nothing wrong with the answer — the failure is the invoice. Three paths, three costs: single ~₹0.5, graph ~₹1, agentic ~₹8. Route the morning queue; your invoice is compared with the optimal one.' },
+    subtitle:'“What is RAG?” sent through the agentic loop: four LLM hops, real money, for a lookup the free floor answers instantly. Nothing wrong with the answer: the failure is the invoice. Three paths, three costs: single ~₹0.5, graph ~₹1, agentic ~₹8. Route the morning queue; your invoice is compared with the optimal one.' },
   { t:'reveal', eyebrow:'The principle',
     title:'The receptionist classifies.\nIt never solves.',
-    body:'It can run on every query precisely <em>because</em> it does nothing else. In Sage this is one cheap LLM call, with a keyless regex fallback — words like <em>prerequisite, requires, which lectures</em> smell like graph. The cheap 75% goes down the cheap path; this is the Part 1 routing decision, re-instantiated inside L3.' },
+    body:'It can run on every query precisely <em>because</em> it does nothing else. In Sage this is one cheap LLM call, with a keyless regex fallback: words like <em>prerequisite, requires, which lectures</em> smell like graph. The cheap 75% goes down the cheap path; this is the Part 1 routing decision, re-instantiated inside L3.' },
 ]},
 
 /* ---------- 11 · EX 10 · GROUNDING ---------- */
 { id:'grounding', title:'Ex 10 · Grounding', icon:'shield-check', steps:[
   { t:'exground', eyebrow:'Exercise 10 of 12 · the G in RAG · bucket 4 at generation',
     title:'You are the auditor.',
-    subtitle:'Retrieval done. Now generation, and its one disease. Below: a generated answer and the two sources it retrieved. Hover each sentence — its supporting source lights up. One sentence lights up nothing. Click every sentence you believe is unsupported, then check the audit.' },
+    subtitle:'Retrieval done. Now generation, and its one disease. Below: a generated answer and the two sources it retrieved. Hover each sentence: its supporting source lights up. One sentence lights up nothing. Click every sentence you believe is unsupported, then check the audit.' },
   { t:'reveal', eyebrow:'The formula',
     title:'Hallucination =\nuncertainty × forced response.',
-    body:'Grounding pins the first low (answer only from the retrieved context) and removes the second (the model is <em>allowed to say</em> “I haven’t written this up in my notes yet”). The invented sentence sounds exactly as confident as the true ones — that’s what makes ungrounded generation dangerous, and why the eval measures <strong>faithfulness</strong>, not eloquence. This is bucket 4 — the behaviour gap — resurfacing at generation time, exactly as the bridge promised.' },
+    body:'Grounding pins the first low (answer only from the retrieved context) and removes the second (the model is <em>allowed to say</em> “I haven’t written this up in my notes yet”). The invented sentence sounds exactly as confident as the true ones; that’s what makes ungrounded generation dangerous, and why the eval measures <strong>faithfulness</strong>, not eloquence. This is bucket 4, the behaviour gap, resurfacing at generation time, exactly as the bridge promised.' },
 ]},
 
 /* ---------- 12 · EX 11 · THE BUILD ORDER ---------- */
 { id:'build', title:'Ex 11 · The build order', icon:'trending-up', steps:[
   { t:'exbuild', eyebrow:'Exercise 11 of 12 · the capstone decision',
     title:'The build-order game.',
-    subtitle:'You now know seven techniques. Which do you buy, and in what order? Never by vibes — by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. The game: reach 85% overall recall for the smallest spend. Try free things first. Watch WHICH bar is bleeding before you buy.',
-    fail:'✗ “it seems better” — the sentence that has burned more RAG budgets than any bug' },
+    subtitle:'You now know seven techniques. Which do you buy, and in what order? Never by vibes; by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. The game: reach 85% overall recall for the smallest spend. Try free things first. Watch WHICH bar is bleeding before you buy.',
+    fail:'✗ “it seems better”, the sentence that has burned more RAG budgets than any bug' },
 ]},
 
 /* ---------- 13 · EX 12 · THE CHOOSER ---------- */
 { id:'chooser', title:'Ex 12 · The chooser', icon:'compass', steps:[
   { t:'question', eyebrow:'Exercise 12 of 12 · the field guide',
     q:'“Which vector database\nshould we use?”\n<em>The wrong first question.</em>',
-    sub:'Every tool on the market is an implementation of the techniques you just derived. The corpus, the query mix, and the failing bucket choose the tool — never the other way round. A vendor name before your golden pairs exist means you are shopping, not engineering.' },
+    sub:'Every tool on the market is an implementation of the techniques you just derived. The corpus, the query mix, and the failing bucket choose the tool, never the other way round. A vendor name before your golden pairs exist means you are shopping, not engineering.' },
   { t:'exchooser',
     title:'Three questions, one stack.',
     subtitle:'Answer honestly for YOUR app and read the verdict. Notice it never opens with a vendor.' },
   { t:'receipt',
-    title:'Done Equals — your receipt.',
+    title:'Done Equals: your receipt.',
     subtitle:'Generate your completion receipt and post it in your track channel. A facilitator verifies it against this lab. The receipt is the gate; the claim is not.' },
 ]},
 
@@ -464,7 +464,7 @@ const MODULES = [
     subtitle:'You have now run the same loop twice without changing a single step. Only the nouns changed.' },
   { t:'closing',
     title:'Minimum sufficient context.',
-    body:'The goal is never the <em>maximum</em> possible context. It is the <strong>minimum sufficient context</strong> for a correct answer, at the lowest layer that passes the eval, on the cheapest rung that closes the failing bucket.<br><br>The last AI feature you built: which layer is it on, which rung is it on — and can you show the failing golden pairs that justified each?' },
+    body:'The goal is never the <em>maximum</em> possible context. It is the <strong>minimum sufficient context</strong> for a correct answer, at the lowest layer that passes the eval, on the cheapest rung that closes the failing bucket.<br><br>The last AI feature you built: which layer is it on, which rung is it on, and can you show the failing golden pairs that justified each?' },
 ]},
 
 ];

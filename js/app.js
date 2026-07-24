@@ -1,5 +1,5 @@
 /* ============================================================
-   THE CONTEXT LAB — app controller
+   THE CONTEXT LAB: app controller
    Linear player: one thing per screen. Every exercise is a
    felt failure → a hands-on fix → the reveal.
    ============================================================ */
@@ -44,7 +44,7 @@ function semSearch(q){
   }).filter(r=>r.score>0).sort((a,b)=>b.score-a.score);
 }
 function resultsHTML(rows, semMode){
-  if(!rows.length) return `<div class="noresult">${ic('search-x')} 0 results — no query word appears anywhere in the corpus.</div>`;
+  if(!rows.length) return `<div class="noresult">${ic('search-x')} 0 results: no query word appears anywhere in the corpus.</div>`;
   return rows.slice(0,3).map((r,i)=>{
     let snip = esc(r.d.x.slice(0,150))+'…';
     if(!semMode){ r.hits.forEach(w=>{ snip = snip.replace(new RegExp('('+w+')','ig'),'<mark>$1</mark>'); }); }
@@ -244,7 +244,7 @@ function renderBuckets(step){
     card.onclick = ()=>card.classList.toggle('flipped');
     wrap.appendChild(card);
   });
-  const note = el(`<p class="caption" style="margin-top:var(--space-4)">Hold on to bucket 3 — the twelve exercises of this lab live entirely inside it. And bucket 4 will make one surprise return at generation time.</p>`);
+  const note = el(`<p class="caption" style="margin-top:var(--space-4)">Hold on to bucket 3: the twelve exercises of this lab live entirely inside it. And bucket 4 will make one surprise return at generation time.</p>`);
   node.appendChild(note);
   return node;
 }
@@ -286,11 +286,11 @@ function renderTT(step){
       p.classList.add('picked', picked===c.send?'right':'wrong');
       if(picked!==c.send) $(`[data-r="${c.send?'send':'rag'}"]`,row).classList.add('answer');
       done++; if(picked===c.send) right++;
-      score.textContent = `${right} / ${done}`+(done===TT_CASES.length?' — one green cell, three orange. RAG is not the modern default; it is what you buy when EITHER constraint fails.':'');
+      score.textContent = `${right} / ${done}`+(done===TT_CASES.length?'. One green cell, three orange. RAG is not the modern default; it is what you buy when EITHER constraint fails.':'');
     });
     rows.appendChild(row);
   });
-  node.appendChild(el(`<p class="caption" style="margin-top:var(--space-3)">And RAG is not a rival to tools — in production it usually <em>is</em> a tool: <code>search_knowledge_base</code>. Keep that sentence; Exercise 8 turns it into architecture.</p>`));
+  node.appendChild(el(`<p class="caption" style="margin-top:var(--space-3)">And RAG is not a rival to tools; in production it usually <em>is</em> a tool: <code>search_knowledge_base</code>. Keep that sentence; Exercise 8 turns it into architecture.</p>`));
   return node;
 }
 
@@ -331,7 +331,7 @@ function renderRouteGame(step){
       else{ v.textContent = '✗ too cheap: this bucket cannot be closed at '+MAP_LAYERS[s]+'. Answer: '+MAP_LAYERS[it.a]; v.className = 'verdict err'; }
     });
     $('#mqScore',node).textContent = answered<MAP_QUEUE.length ? 'route every query first' :
-      (right===MAP_QUEUE.length ? right+'/4 — cheapest passing layer, every time' : right+'/4 — re-check the buckets and try again');
+      (right===MAP_QUEUE.length ? right+'/4, cheapest passing layer, every time' : right+'/4, re-check the buckets and try again');
     if(answered===MAP_QUEUE.length){
       state.results.mapRoute = { right }; state.answered[gi] = true; persist(); renderFooter();
       toast(right===MAP_QUEUE.length ? 'Perfect routing. Watch the same decision reappear inside L3, in Exercise 9.' : 'Diagnosis before purchase: re-read the buckets and route again.', right===MAP_QUEUE.length?'good':'');
@@ -352,7 +352,7 @@ function renderSevenBuckets(step){
       <div><h5>${esc(b.name)}</h5><p>${esc(b.d)}</p></div>
       <span class="sb-ex mono">${esc(b.ex)}</span></div>`));
   });
-  node.appendChild(el(`<div class="anchor" style="margin-top:var(--space-5)">${ic('anchor')} The seven retrieval buckets are the fine structure of bucket 3. Each exercise ahead starts with a query that fails into one of them — and you derive the fix by doing it.</div>`));
+  node.appendChild(el(`<div class="anchor" style="margin-top:var(--space-5)">${ic('anchor')} The seven retrieval buckets are the fine structure of bucket 3. Each exercise ahead starts with a query that fails into one of them, and you derive the fix by doing it.</div>`));
   return node;
 }
 
@@ -369,7 +369,7 @@ function renderL3Map(step){
         <div class="l3stages"></div>
       </div>
     </div>
-    <p class="caption" style="margin-top:var(--space-4)">Three wires cross levels — watch for them: <strong>Exercise 8</strong> is L2’s tool-calling loop pointed at your own corpus. <strong>Exercise 10</strong> is bucket 4 resurfacing at generation time. <strong>Exercises 9, 11 and 12</strong> are the map itself, re-instantiated inside L3.</p>
+    <p class="caption" style="margin-top:var(--space-4)">Three wires cross levels, watch for them: <strong>Exercise 8</strong> is L2’s tool-calling loop pointed at your own corpus. <strong>Exercise 10</strong> is bucket 4 resurfacing at generation time. <strong>Exercises 9, 11 and 12</strong> are the map itself, re-instantiated inside L3.</p>
   </div>`);
   const stages = $('.l3stages',node);
   L3_STAGES.forEach(s=>{
@@ -388,7 +388,7 @@ function benchHTML(title, inner, foot){
 function renderExSearch(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Sage — keyword floor', `
+    ${benchHTML('Sage: keyword floor', `
       <div class="presets">
         <button class="chipbtn" data-q="What is RAG?">What is RAG?</button>
         <button class="chipbtn" data-q="How does the ReAct framework work?">How does ReAct work?</button>
@@ -422,8 +422,8 @@ function renderExSearch(step){
 function renderExMeaning(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Sage — floor + meaning mode', `
-      <label class="switchrow"><input type="checkbox" class="semtoggle"><span class="slab">Meaning mode</span><span class="ssub">match by meaning-neighbourhoods — what embeddings buy you</span></label>
+    ${benchHTML('Sage: floor + meaning mode', `
+      <label class="switchrow"><input type="checkbox" class="semtoggle"><span class="slab">Meaning mode</span><span class="ssub">match by meaning-neighbourhoods, what embeddings buy you</span></label>
       <div class="presets">
         <button class="chipbtn" data-q="make the bot stop lying">make the bot stop lying</button>
         <button class="chipbtn" data-q="when will I learn to automate my job">automate my job</button>
@@ -442,14 +442,14 @@ function renderExMeaning(step){
     const kw = kwSearch(q), se = semSearch(q);
     res.innerHTML = resultsHTML(isSem?se:kw, isSem);
     const ts = tok(q);
-    let bts = 'tokens: ['+ts.join(', ')+']\n\nLETTERS (BM25):  '+(kw.length?kw.slice(0,2).map(r=>r.d.k).join(', '):'0 results — zero shared characters')+'\nMEANING mode :  ';
+    let bts = 'tokens: ['+ts.join(', ')+']\n\nLETTERS (BM25):  '+(kw.length?kw.slice(0,2).map(r=>r.d.k).join(', '):'0 results, zero shared characters')+'\nMEANING mode :  ';
     if(se.length){
       bts += se.slice(0,2).map(r=>r.d.k+' (cos '+r.cos+')').join(', ')+'\n\nneighbourhoods used:\n';
       ts.forEach(w=>{ if(MEANING[w]) bts += '  "'+w+'"  ≈  '+MEANING[w].join(', ')+'\n'; });
     } else bts += '(no neighbourhood found either)';
     pre.textContent = bts;
     icons();
-    if(!isSem && !kw.length && !feltGap){ feltGap = true; toast('Zero results — and the answer IS in the corpus. That is bucket 1. Now flip on Meaning mode.','bad'); }
+    if(!isSem && !kw.length && !feltGap){ feltGap = true; toast('Zero results, and the answer IS in the corpus. That is bucket 1. Now flip on Meaning mode.','bad'); }
     if(isSem && se.length && feltGap){ toast('Same query, same corpus. The only thing that changed is the matcher. That is what embeddings buy.','good'); }
   }
   $('.sim-in .btn',node).onclick = run;
@@ -512,7 +512,7 @@ function renderExOrphan(step){
     if(!passport){
       res.innerHTML = `<div class="rdoc orphan"><div class="rt"><span>1. (unknown source)</span><span class="rs">score 4</span></div>
         <div class="rx">“…then <mark>redeploy</mark> with the <mark>flag</mark> enabled. The flag is version-pinning…”</div>
-        <div class="rm err-t">retrieved — but WHICH flag? which doc? which lecture? The chunk lost its address.</div></div>`;
+        <div class="rm err-t">retrieved, but WHICH flag? which doc? which lecture? The chunk lost its address.</div></div>`;
     } else {
       res.innerHTML = `<div class="rdoc hit"><div class="rt"><span>1. Deployment on Replicate › Shipping a new version</span><span class="rs">score 9</span></div>
         <div class="rx"><span class="passport-add">“From Module 1 (Diffusion); section ‘Deployment on Replicate › Shipping a new version’.”</span> …then <mark>redeploy</mark> with the <mark>flag</mark> enabled. The flag is version-pinning: callers stay on the old model until you flip them.</div>
@@ -555,13 +555,13 @@ function renderExFusion(step){
       (rows||[]).map((r,i)=>`<div class="rdoc ${r.star?'hit':''}"><div class="rt"><span>${i+1}. ${r.star?'★ ':''}${esc(r.name)}</span><span class="rs">${r.score}</span></div></div>`).join('');
   }
   $('.onlyk',node).onclick = ()=>{ verdict('<b>Keyword only:</b> the exact term wins the list, but the target (★) sits at #3, below two docs that merely mention BM25 a lot. The fuzzy “agents module” signal was thrown away.'); tbl.innerHTML=''; };
-  $('.onlys',node).onclick = ()=>{ verdict('<b>Meaning only:</b> scope understood, ★ at #2 — but the module overview outranks it, because “meaning” can’t feel the exact term BM25. The precise signal was thrown away.'); tbl.innerHTML=''; };
+  $('.onlys',node).onclick = ()=>{ verdict('<b>Meaning only:</b> scope understood, ★ at #2, but the module overview outranks it, because “meaning” can’t feel the exact term BM25. The precise signal was thrown away.'); tbl.innerHTML=''; };
   $('.dofuse',node).onclick = ()=>{
     const K = 60, score = {}, star = {};
     FUSE_KW.forEach((it,i)=>{ score[it[0]] = (score[it[0]]||0)+1/(K+i+1); star[it[0]] = star[it[0]]||!!it[2]; });
     FUSE_SEM.forEach((it,i)=>{ score[it[0]] = (score[it[0]]||0)+1/(K+i+1); star[it[0]] = star[it[0]]||!!it[2]; });
     const ranked = Object.entries(score).sort((a,b)=>b[1]-a[1]);
-    verdict('<b>Fused (RRF):</b> the consensus document — never #1 in either list — takes #1 overall. Both signals kept, no unit conversion invented.',
+    verdict('<b>Fused (RRF):</b> the consensus document (never #1 in either list) takes #1 overall. Both signals kept, no unit conversion invented.',
       ranked.slice(0,4).map(([name,sc])=>({ name, score:sc.toFixed(4), star:star[name] })));
     let html = '<tr><th>document</th><th>kw rank</th><th>sem rank</th><th>1/(60+r) + 1/(60+r)</th><th>fused</th></tr>';
     ranked.slice(0,5).forEach(([name,sc])=>{
@@ -570,7 +570,7 @@ function renderExFusion(step){
       html += `<tr class="${star[name]?'win':''}"><td>${esc(name.slice(0,26))}</td><td>${ki>-1?'#'+(ki+1):'–'}</td><td>${si>-1?'#'+(si+1):'–'}</td><td>${parts.join(' + ')}</td><td>${sc.toFixed(4)}</td></tr>`;
     });
     tbl.innerHTML = html;
-    toast('Ranked #3 and #2 — wins the fusion. Consensus beats a lone first place. That is RRF.','good');
+    toast('Ranked #3 and #2, wins the fusion. Consensus beats a lone first place. That is RRF.','good');
   };
   return node;
 }
@@ -626,13 +626,13 @@ function renderExRewrite(step){
     keybox.innerHTML = '<b>rewritten:</b> '+esc(REWRITE_KEY);
     res.innerHTML = resultsHTML(semSearch(REWRITE_KEY), true); map();
     pre.textContent = 'LEXICON row applied:\n  "automate my job"  →  AAA agent progression, agentic workflows\n\nThe lexicon is harvested from YOUR failed queries. It is the two-column\ndictionary of student-language vs corpus-language, and this one line of\ntranslation just turned a miss into a hit.';
-    toast('Same intent, new key. The rewriter is a translator, nothing more — and it is the highest-ROI component in the system.','good');
+    toast('Same intent, new key. The rewriter is a translator, nothing more, and it is the highest-ROI component in the system.','good');
   };
   $('.hyde',node).onclick = ()=>{
     mode = 'hyde';
     keybox.innerHTML = '<b>HyDE probe (a hallucinated answer):</b> '+esc(HYDE_KEY);
     res.innerHTML = resultsHTML(semSearch(HYDE_KEY), true); map();
-    pre.textContent = 'We searched with a FAKE ANSWER, not the question.\n\nLook at the map: the question sits far from every cluster — questions are\nphrased like questions. The fake answer is phrased like the real answers,\nso it lands inside the agents cluster, and its nearest neighbours are the\ntrue passages. Factually worthless, geometrically precious.';
+    pre.textContent = 'We searched with a FAKE ANSWER, not the question.\n\nLook at the map: the question sits far from every cluster: questions are\nphrased like questions. The fake answer is phrased like the real answers,\nso it lands inside the agents cluster, and its nearest neighbours are the\ntrue passages. Factually worthless, geometrically precious.';
     toast('Answers live near answers. Questions don’t. That is the whole trick.','good');
   };
   requestAnimationFrame(map);
@@ -643,7 +643,7 @@ function renderExRewrite(step){
 function renderExRerank(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Candidates in bi-encoder order — fix the ranking', `
+    ${benchHTML('Candidates in bi-encoder order: fix the ranking', `
       <div class="cands"></div>
       <div class="presets" style="margin-top:var(--space-3)">
         <button class="btn btn--primary btn--sm runce">Run cross-encoder</button>
@@ -731,7 +731,7 @@ function renderExGraph(step){
     if(depth>=2) GRAPH_E.forEach(([a,b],i)=>{ if(hop1.includes(b)){ hop2.push(a); $('#ge'+i,wrap).setAttribute('class','gedge glow2'); $('#gn-'+a,wrap).setAttribute('class','gnode hop2'); } });
     let log = 'seed    : tool-calling  (the entity the query names)\nhop 1 ← : '+hop1.map(k=>GRAPH_N[k].t).join(', ')+'\n';
     if(depth>=2) log += 'hop 2 ← : '+(hop2.length?hop2.map(k=>GRAPH_N[k].t).join(', '):'(none)')+'\n';
-    log += '\nANSWER — lectures that assume tool calling:\n  '+hop1.map(k=>GRAPH_N[k].t).join('\n  ')+
+    log += '\nANSWER: lectures that assume tool calling:\n  '+hop1.map(k=>GRAPH_N[k].t).join('\n  ')+
       (depth>=2 && hop2.length ? '\n  '+hop2.map(k=>GRAPH_N[k].t+'  (via ReAct)').join('\n  ') : '');
     log += '\n\nNo similarity score was computed. You read edges and followed them.';
     pre.textContent = log;
@@ -764,7 +764,7 @@ function renderExLoop(step){
       </div>
       <div class="glabel">the answer, if you stop here</div>
       <div class="outbox"><span class="mut">search first, then decide when you can answer</span></div>`)}
-    <p class="honest">Honest note: the three hops replay a recorded Sage trace for this one query, so everyone feels the same loop. What is yours is the decision of when to stop — and that decision is the lesson.</p>
+    <p class="honest">Honest note: the three hops replay a recorded Sage trace for this one query, so everyone feels the same loop. What is yours is the decision of when to stop, and that decision is the lesson.</p>
   </div>`);
   const log = $('.hoplog',node), out = $('.outbox',node), inv = $('.invoice',node), btn = $('.srch',node), nextq = $('.nextq',node);
   let i = 0, spent = 0;
@@ -787,7 +787,7 @@ function renderExLoop(step){
       return;
     }
     out.innerHTML = '<span class="ok-t">'+esc(LOOP_ANSWER)+' · grounded on 3 hops · total ₹'+spent+'</span>';
-    toast('Three searches, each derived from reading the last. That is retrieval as a TOOL, not a step — bounded at 4 hops.','good');
+    toast('Three searches, each derived from reading the last. That is retrieval as a TOOL, not a step, bounded at 4 hops.','good');
   };
   $('.restart',node).onclick = ()=>{ i = 0; spent = 0; log.innerHTML = ''; out.innerHTML = '<span class="mut">search first, then decide when you can answer</span>'; ui(); };
   ui();
@@ -855,7 +855,7 @@ function renderExGround(step){
       <div class="glabel">retrieved context</div>
       <div class="gr-src" data-s="1"><div class="st mono">[S1] Hallucination &amp; Grounding</div>Hallucination = uncertainty × forced response. Grounding pins the model to retrieved context and removes the forced response by allowing “I don’t know.”</div>
       <div class="gr-src" data-s="2"><div class="st mono">[S2] Evals</div>recall@k asks whether retrieval fetched the answer; faithfulness asks whether the generated answer is supported by what was fetched.</div>
-      <div class="glabel">generated answer — click the sentences you don’t trust</div>
+      <div class="glabel">generated answer: click the sentences you don’t trust</div>
       <div class="gr-ans"></div>
       <div class="presets" style="margin-top:var(--space-3)"><button class="btn btn--primary acheck">Check the audit</button></div>
       <pre class="codeblk bts-pre" hidden></pre>`)}
@@ -905,7 +905,7 @@ function renderExBuild(step){
       <div class="toggles"></div>
       <div class="spend mono">spend: <b class="spendv">₹0</b> / 1,000 queries <span class="buildmsg"></span></div>`)}
     <div class="bts"><div class="btslabel mono">behind the scenes · what each rung moved</div><pre class="codeblk bts-pre">floor (free)                     kw 88   sem 32   overall 74
-toggle rungs to watch the split move — the failing subset is your roadmap</pre></div>
+toggle rungs to watch the split move: the failing subset is your roadmap</pre></div>
   </div>`);
   const toggles = $('.toggles',node), pre = $('.bts-pre',node);
   const on = new Set((state.results.build && state.results.build.on) || []);
@@ -937,7 +937,7 @@ toggle rungs to watch the split move — the failing subset is your roadmap</pre
       msg.className = 'buildmsg ok-t';
       if(minimal) toast('₹40. Free rungs first, then exactly the paid rung the semantic bar demanded. That is eval-driven build order.','good');
     } else {
-      msg.textContent = overall>=80 ? 'close — look at which bar is still red' : '';
+      msg.textContent = overall>=80 ? 'close: look at which bar is still red' : '';
       msg.className = 'buildmsg mut';
     }
     pre.textContent = lines.join('\n')+(on.size?'\n\nread the trace: every rung you bought should move the bar that was failing.\nif it moved the healthy bar, you bought the wrong rung.':'');
@@ -985,15 +985,15 @@ function renderExChooser(step){
     }
     out.push({ t:'The floor, always first', x:'Full-text search plus metadata filters inside the database you already run: Postgres or Supabase FTS, SQLite FTS5, or the Elasticsearch you already pay for. Measure recall@k on your pairs before buying anything.' });
     if(m==='kw') out.push({ t:'Then stop', x:'Your split says the floor carries it. Stamp contextual passports at indexing (free) and hold. Do not add embeddings until the meaning bar bleeds in your own eval, not in a vendor demo.' });
-    if(m==='sem') out.push({ t:'Embeddings, inside the same database', x:'pgvector on the Postgres or Supabase you already run, plus the rewrite lexicon harvested from your failed queries. A dedicated vector database earns its place only when scale or latency genuinely breaks pgvector — and it arrives with a second system of record to keep in sync.' });
+    if(m==='sem') out.push({ t:'Embeddings, inside the same database', x:'pgvector on the Postgres or Supabase you already run, plus the rewrite lexicon harvested from your failed queries. A dedicated vector database earns its place only when scale or latency genuinely breaks pgvector, and it arrives with a second system of record to keep in sync.' });
     if(m==='rel') out.push({ t:'Graph from structure you already own', x:'Wikilinks, foreign keys, and folder trees are a free graph; route relationship queries to traversal. Multi-hop synthesis gets a bounded agentic loop (search as a tool, hard hop cap). A graph database earns its place only when traversal depth breaks the simple version.' });
-    if(c==='huge') out.push({ t:'At this size, ingestion is the product', x:'Chunk on meaning, stamp passports at indexing, and for long structured documents (the financial and legal pattern) consider reasoning over a document index — the PageIndex pattern — before any similarity machinery.' });
+    if(c==='huge') out.push({ t:'At this size, ingestion is the product', x:'Chunk on meaning, stamp passports at indexing, and for long structured documents (the financial and legal pattern) consider reasoning over a document index (the PageIndex pattern) before any similarity machinery.' });
     if(st==='mvp') out.push({ t:'MVP rule', x:'One paid rung maximum, no reranker, no second system of record. Ship, log the failed queries, and let the failing bucket name the next purchase.' });
     if(st==='prod') out.push({ t:'Production adds two non-negotiables', x:'A cross-encoder rerank stage over the top 20, and a faithfulness eval on every answer. Grounding is a launch gate, not a polish item.' });
     return out;
   }
   $('.cgo',node).onclick = ()=>{
-    if(!sel.corpus || !sel.mix || !sel.stage){ toast('Answer all three questions first — the tool cannot be chosen before the corpus and the query mix are.','bad'); return; }
+    if(!sel.corpus || !sel.mix || !sel.stage){ toast('Answer all three questions first: the tool cannot be chosen before the corpus and the query mix are.','bad'); return; }
     const v = verdict();
     vlab.hidden = false;
     out.innerHTML = v.map((r,i)=>`<div class="rdoc ${i===0?'hit':''}"><div class="rt"><span>${i+1}. ${esc(r.t)}</span></div><div class="rx">${esc(r.x)}</div></div>`).join('');
@@ -1040,7 +1040,7 @@ function renderReceipt(step){
   $('.rgen',node).onclick = ()=>{
     pre.textContent = buildReceipt();
     copy.disabled = false;
-    toast('Receipt generated. Copy it and post it — behavioural evidence outranks the claim.','good');
+    toast('Receipt generated. Copy it and post it; behavioural evidence outranks the claim.','good');
   };
   copy.onclick = ()=>{
     const txt = pre.textContent;

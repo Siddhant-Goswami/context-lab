@@ -1,5 +1,5 @@
 /* ============================================================
-   100xEngineers Design System — colors_and_type.css
+   100xEngineers Design System: colors_and_type.css
    Drop-in token sheet + semantic classes.
    ============================================================ */
 
@@ -7,10 +7,10 @@
 
 :root {
   /* ---------- Brand color ---------- */
-  --accent:           #F96846;   /* 100x coral — primary accent, never washed across whole sections */
+  --accent:           #F96846;   /* 100x coral, primary accent, never washed across whole sections */
   --accent-hover:     #E8542F;
   --accent-press:     #C53D1B;
-  --accent-tint:      #FFEEE9;   /* peach — highlight sections, hovered selection */
+  --accent-tint:      #FFEEE9;   /* peach, highlight sections, hovered selection */
   --accent-tint-2:    rgba(249, 104, 70, 0.08); /* coral @ 8% for overlays */
   --accent-tint-3:    rgba(249, 104, 70, 0.16);
 
@@ -18,7 +18,7 @@
   --bg:               #FFFFFF;   /* page background */
   --surface-1:        #F9F9F9;   /* card background (lighter) */
   --surface-2:        #F5F5F5;   /* card background (heavier) */
-  --surface-inverse:  #1A1A1A;   /* dark surfaces — used sparingly, e.g. code blocks, footer */
+  --surface-inverse:  #1A1A1A;   /* dark surfaces, used sparingly, e.g. code blocks, footer */
 
   /* ---------- Borders ---------- */
   --border:           #E5E5E5;   /* hairline default */
@@ -190,7 +190,7 @@ pre.code, pre .code {
 }
 
 /* ============================================================
-   Components — Buttons
+   Components: Buttons
    ============================================================ */
 .btn {
   display: inline-flex;
@@ -251,7 +251,7 @@ pre.code, pre .code {
 .btn--lg { padding: 18px 28px; font-size: var(--fs-body-lg); }
 
 /* ============================================================
-   Components — Pills / Badges
+   Components: Pills / Badges
    ============================================================ */
 .pill {
   display: inline-flex;
@@ -275,7 +275,7 @@ pre.code, pre .code {
 .dot { width: 6px; height: 6px; border-radius: var(--r-pill); background: currentColor; }
 
 /* ============================================================
-   Components — Cards
+   Components: Cards
    ============================================================ */
 .card {
   background: var(--bg);
@@ -297,7 +297,7 @@ pre.code, pre .code {
 }
 
 /* ============================================================
-   Components — Form inputs
+   Components: Form inputs
    ============================================================ */
 .input, .textarea, .select {
   width: 100%;
@@ -328,7 +328,7 @@ pre.code, pre .code {
 .help--error { color: var(--error); }
 
 /* ============================================================
-   Layout helpers (kept minimal — kits build their own)
+   Layout helpers (kept minimal, kits build their own)
    ============================================================ */
 .container { max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
 .stack > * + * { margin-top: var(--space-4); }
