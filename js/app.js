@@ -895,57 +895,190 @@ function renderExGround(step){
 }
 
 /* ---------- EX 11 · the build order ---------- */
-const RECALL_WORD = v => v>=85 ? 'on target' : v>=72 ? 'close' : v>=55 ? 'getting there' : v>=40 ? 'weak' : 'very weak';
-function renderExBuild(step){
-  const node = el(`<div class="step step--wide">
-    ${stepHead(step)}
-    ${benchHTML('Reach the target recall for the least money', `
-      <div class="meter"><div class="mlab mono"><span>keyword-style queries</span><b class="kwv"></b></div><div class="mbar"><i class="kwb"></i></div></div>
-      <div class="meter"><div class="mlab mono"><span>meaning-style queries</span><b class="semv"></b></div><div class="mbar"><i class="semb"></i></div></div>
-      <div class="meter"><div class="mlab mono"><span><strong>overall recall</strong></span><b class="allv"></b></div><div class="mbar overall"><i class="allb"></i><span class="target" style="left:85%"><span class="tmark mono">target</span></span></div></div>
-      <div class="toggles"></div>
-      <div class="spend mono">spend: <b class="spendv">₹0</b> / 1,000 queries <span class="buildmsg"></span></div>`)}
-    <div class="bts"><div class="btslabel mono">behind the scenes · what each technique moved</div><pre class="codeblk bts-pre">floor (free)                     keyword: strong   meaning: very weak
-toggle techniques to watch the split move: the failing subset is your roadmap</pre></div>
-  </div>`);
-  const toggles = $('.toggles',node), pre = $('.bts-pre',node);
-  const on = new Set((state.results.build && state.results.build.on) || []);
+/* coverage state: every rung is a slider, 0 to 100% of query traffic */
+function buildCoverage(){
+  const saved = state.results.build || {};
+  const cov = {};
+  RUNGS.forEach(r=>{ cov[r.id] = 0; });
+  if(saved.cov) RUNGS.forEach(r=>{ const v = +saved.cov[r.id]; if(v>=0 && v<=100) cov[r.id] = Math.round(v); });
+  else if(Array.isArray(saved.on)) saved.on.forEach(id=>{ if(id in cov) cov[id] = 100; });  /* migrate the old switches */
+  return cov;
+}
+function buildScore(cov){
+  let kw = BUILD_FLOOR.kw, sem = BUILD_FLOOR.sem, spend = 0;
   RUNGS.forEach(r=>{
-    const d = el(`<label class="tg"><input type="checkbox" data-r="${r.id}" ${on.has(r.id)?'checked':''}>
-      <span class="tinfo"><span class="tname">${esc(r.n)}</span><span class="tsub">${esc(r.s)}</span></span>
-      <span class="tcost mono ${r.cost?'paid':'free'}">${r.cost?('₹'+r.cost+'/1k q'):'free'}</span></label>`);
-    toggles.appendChild(d);
+    const c = (cov[r.id]||0)/100; if(!c) return;
+    kw = Math.min(BUILD_FLOOR.cap, kw + r.kw*c);
+    sem = Math.min(BUILD_FLOOR.cap, sem + r.sem*c);
+    spend += r.cost*c;
   });
+  return { kw, sem, overall:.75*kw+.25*sem, spend:Math.round(spend) };
+}
+function renderExBuild(step){
+  const node = el(`<div class="step step--build">
+    ${stepHead(step)}
+
+    <div class="probcard">
+      <div class="btslabel mono">the problem · what the golden set says</div>
+      <p class="body-sm">You wrote <strong>100 golden pairs</strong>, a real student query plus the one curriculum document that should answer it, and classified every pair. <strong>75 are keyword-style</strong>: the student uses the corpus’s own words (“what is LoRA training?”). <strong>25 are meaning-style</strong>: the student’s words never appear in the corpus (“why does my bot keep lying to students?” should retrieve <em>Hallucination &amp; Grounding</em>). That split is why overall recall weighs <code>0.75 × keyword + 0.25 × meaning</code>.</p>
+      <pre class="codeblk">floor (FTS + metadata, free)     keyword 88%    meaning 32%    overall recall@6 = 74%</pre>
+      <div class="anchor">${ic('target')} <span>Get overall recall@6 to <strong>85%</strong> for the smallest possible spend. Seven techniques collapse into five rungs: two free, three priced per 1,000 queries. Each one is a <strong>slider, not a switch</strong>, so you buy the fraction of traffic it covers and the cost scales with it. Partial coverage is legal, and that is the whole point.</span></div>
+    </div>
+
+    <div class="buildgrid">
+      ${benchHTML('Spend wisely', `
+        <div class="meter"><div class="mlab mono"><span>keyword-style queries (75 of 100)</span><b class="kwv"></b></div><div class="mbar"><i class="kwb"></i></div></div>
+        <div class="meter"><div class="mlab mono"><span>meaning-style queries (25 of 100)</span><b class="semv"></b></div><div class="mbar"><i class="semb"></i></div></div>
+        <div class="meter"><div class="mlab mono"><span><strong>overall recall@6</strong> · target 85%</span><b class="allv"></b></div><div class="mbar overall"><i class="allb"></i><span class="target" style="left:85%"><span class="tmark mono">target</span></span></div></div>
+        <div class="rungs"></div>
+        <div class="spend mono">spend: <b class="spendv">₹0</b> / 1,000 queries</div>
+        <div class="buildmsg mut"></div>
+        <div class="presets" style="margin:var(--space-3) 0 0"><button class="btn btn--secondary btn--sm breset">${ic('rotate-ccw')} Reset to the floor</button></div>`,
+        'coverage in, recall and invoice out · the same numbers as the rest of the lab, made continuous')}
+
+      ${benchHTML('Practice set · 8 of the 100 pairs, live', `
+        <div class="pcount mono"><b class="pcv">0</b>/8 pairs retrieved in the top 6</div>
+        <div class="pairs"></div>
+        <p class="honest">No rung is “good” or “bad” in the abstract. A pair passes when the bar <em>it lives on</em> rises. If a rung you paid for flips no pairs, you bought the wrong rung.</p>`)}
+    </div>
+
+    <div class="bts"><div class="btslabel mono">behind the scenes · what each rung moved</div><pre class="codeblk bts-pre"></pre></div>
+  </div>`);
+
+  const rungWrap = $('.rungs',node), pairWrap = $('.pairs',node), pre = $('.bts-pre',node), msg = $('.buildmsg',node);
+  const cov = buildCoverage();
+  let won = false;
+
+  RUNGS.forEach(r=>{
+    rungWrap.appendChild(el(`<div class="rung" data-rung="${r.id}">
+      <span class="rinfo"><span class="rn">${esc(r.n)}</span><span class="rs">${esc(r.s)}</span></span>
+      <input type="range" min="0" max="100" step="1" value="${cov[r.id]}" data-r="${r.id}" aria-label="${esc(r.n)} coverage">
+      <span class="rv mono"><b class="pct">0%</b><span class="rc ${r.cost?'paid':'free'}">${r.cost?'₹0/1k q':'free'}</span></span>
+    </div>`));
+  });
+  BUILD_PAIRS.forEach((p,i)=>{
+    pairWrap.appendChild(el(`<div class="pair" data-pair="${i}">
+      <span class="st mono">✗</span>
+      <span class="pbody">
+        <span class="pq">${esc(p.q)}<span class="kind mono">${p.kind}</span></span>
+        <span class="pd">should retrieve → <b>${esc(p.doc)}</b></span>
+        <span class="need mono"></span>
+      </span></div>`));
+  });
+
   function calc(){
-    let kw = 88, sem = 32, spend = 0;
-    const lines = ['floor (free)                     keyword: strong   meaning: very weak'];
-    RUNGS.forEach(r=>{ if(on.has(r.id)){
-      kw = Math.min(97,kw+r.kw); sem = Math.min(97,sem+r.sem); spend += r.cost;
-      lines.push('+ '+r.n.toLowerCase().padEnd(29)+' keyword: '+RECALL_WORD(kw).padEnd(14)+' meaning: '+RECALL_WORD(sem));
-    }});
-    const overall = Math.round(.75*kw+.25*sem);
-    $('.kwv',node).textContent = RECALL_WORD(kw);   $('.kwb',node).style.width = kw+'%';
-    $('.semv',node).textContent = RECALL_WORD(sem); $('.semb',node).style.width = sem+'%';
-    $('.allv',node).textContent = RECALL_WORD(overall); $('.allb',node).style.width = overall+'%';
-    $('.allb',node).classList.toggle('pass', overall>=85);
+    const { kw, sem, overall, spend } = buildScore(cov);
+    const lines = ['floor (FTS + metadata, free)'.padEnd(38)+'kw 88.0   sem 32.0   overall 74.0'];
+    RUNGS.forEach(r=>{
+      const row = $(`.rung[data-rung="${r.id}"]`,node), c = cov[r.id];
+      $('.pct',row).textContent = c+'%';
+      $('input',row).style.setProperty('--fill', c+'%');
+      row.classList.toggle('active', c>0);
+      if(r.cost) $('.rc',row).textContent = '₹'+Math.round(r.cost*c/100)+'/1k q';
+    });
+    /* the trace is cumulative, in rung order, so you can read where each point came from */
+    let tk = BUILD_FLOOR.kw, ts = BUILD_FLOOR.sem;
+    RUNGS.forEach(r=>{
+      const c = cov[r.id]/100; if(!c) return;
+      tk = Math.min(BUILD_FLOOR.cap, tk + r.kw*c); ts = Math.min(BUILD_FLOOR.cap, ts + r.sem*c);
+      lines.push('+ '+(r.n.toLowerCase()+' ('+cov[r.id]+'%)').padEnd(36)+' kw '+tk.toFixed(1).padStart(4)+'   sem '+ts.toFixed(1).padStart(4)+'   overall '+(.75*tk+.25*ts).toFixed(1));
+    });
+
+    $('.kwv',node).textContent  = Math.round(kw)+'%';   $('.kwb',node).style.width  = kw+'%';
+    $('.semv',node).textContent = Math.round(sem)+'%';  $('.semb',node).style.width = sem+'%';
+    $('.allv',node).textContent = (Math.round(overall*10)/10)+'%'; $('.allb',node).style.width = overall+'%';
+    $('.allb',node).classList.toggle('pass', overall>=BUILD_FLOOR.target);
     $('.semb',node).classList.toggle('bleed', sem<50);
     $('.spendv',node).textContent = '₹'+spend;
-    const msg = $('.buildmsg',node);
-    if(overall>=85){
-      const minimal = on.has('semantic') && on.has('passport') && on.has('graph') && !on.has('rewrite') && !on.has('rerank');
-      msg.textContent = minimal ? '✓ on target at the MINIMUM spend: free techniques first, then the one paid technique the failing bar pointed at.'
-        : '✓ on target. Could you get here cheaper? (hint: which bar was actually bleeding?)';
+
+    if(overall>=BUILD_FLOOR.target){
+      const rightRung = !cov.rewrite && !cov.rerank && cov.passport===100 && cov.graph===100;
       msg.className = 'buildmsg ok-t';
-      if(minimal) toast('Free techniques first, then exactly the paid technique the meaning bar demanded. That is eval-driven build order.','good');
+      if(rightRung && spend<=30){
+        msg.textContent = '✓ target hit at the MINIMUM: free rungs maxed, then only the coverage the gap demanded.';
+        if(!won){ won = true; toast('About ₹29. Free rungs first, then exactly enough semantic coverage to close a 5-point gap. That is eval-driven build order, bought by the metre.','good'); }
+      } else if(rightRung){
+        msg.textContent = '✓ target hit on the right rung. Cheaper still: how much semantic coverage does a 5-point gap actually need?';
+      } else {
+        msg.textContent = '✓ target hit. Could you get here cheaper? (hint: which bar was actually bleeding, and which rung is priced for it?)';
+      }
     } else {
-      msg.textContent = overall>=80 ? 'close: look at which bar is still red' : '';
       msg.className = 'buildmsg mut';
+      msg.textContent = overall>=80 ? 'close: look at which bar is still red, and which rung is priced for it' : '';
     }
-    pre.textContent = lines.join('\n')+(on.size?'\n\nread the trace: every technique you bought should move the bar that was failing.\nif it moved the healthy bar, you bought the wrong one.':'');
-    state.results.build = { on:[...on] }; persist();
+
+    let pass = 0;
+    BUILD_PAIRS.forEach((p,i)=>{
+      const ok = (p.bar==='kw'?kw:sem) >= p.need; if(ok) pass++;
+      const row = $(`.pair[data-pair="${i}"]`,node);
+      row.classList.toggle('pass', ok);
+      $('.st',row).textContent = ok ? '✓' : '✗';
+      $('.need',row).textContent = ok ? 'retrieved in top 6' : ('needs the '+(p.bar==='kw'?'keyword':'meaning')+' bar at '+p.need+'%');
+    });
+    $('.pcv',node).textContent = pass;
+
+    pre.textContent = lines.join('\n') + (lines.length>1
+      ? '\n\nread the trace: every rupee should move the bar that was failing.\nif it moved the healthy bar, you bought the wrong rung.'
+      : '\nnothing bought yet: drag a slider and watch the split, not the total.');
+
+    state.results.build = { cov:{...cov} }; persist();
   }
-  $$('input[data-r]',toggles).forEach(i=>i.onchange = ()=>{ i.checked?on.add(i.dataset.r):on.delete(i.dataset.r); calc(); });
+
+  $$('input[data-r]',rungWrap).forEach(i=>i.oninput = ()=>{ cov[i.dataset.r] = +i.value; calc(); });
+  $('.breset',node).onclick = ()=>{
+    RUNGS.forEach(r=>{ cov[r.id] = 0; });
+    $$('input[data-r]',rungWrap).forEach(i=>{ i.value = 0; });
+    won = false; calc();
+  };
   calc();
+  return node;
+}
+
+/* ---------- EX 11, continued · the solution ---------- */
+function renderBuildSolution(step){
+  const node = el(`<div class="step step--wide">
+    ${stepHead(step)}
+    <div class="lockednote">
+      <p class="body-sm">You cannot un-see this. Drag the sliders yourself before you read it: the lesson is the moment a paid rung moves the bar that was already healthy.</p>
+      <button class="btn btn--primary sreveal">${ic('key-round')} Reveal the solution</button>
+    </div>
+    <div class="solbody" hidden>
+      <h3 class="solh">Step 1 · Read the split before spending</h3>
+      <p class="body">The floor is not “74% bad”. It is <strong>88% healthy</strong> on keyword queries and <strong>32% bleeding</strong> on meaning queries. One number is a grade; the split is a roadmap. The 25 meaning-style pairs are the failing subset, so every rupee has to land on the meaning bar.</p>
+
+      <h3 class="solh">Step 2 · Exhaust the free rungs</h3>
+      <pre class="codeblk">+ contextual retrieval (100%)    kw 88→92   sem 32→38   overall 78.5   ₹0
++ knowledge graph (100%)         kw 92→94   sem 38→38   overall 80.0   ₹0</pre>
+      <p class="body">Contextual retrieval is a one-time indexing cost; the graph is built from links the curriculum data already carries. Six points of overall recall for nothing. Never pay before the free rungs are maxed.</p>
+
+      <h3 class="solh">Step 3 · The failing bar names the one paid rung</h3>
+      <p class="body">You are at 80, five points short, and the meaning bar sits at 38. Three paid rungs exist:</p>
+      <div class="tblwrap"><table class="uc"><tr><th>rung</th><th>cost at 100%</th><th>where its gain lands</th><th>verdict</th></tr>${
+        BUILD_PAID_TABLE.map(r=>`<tr class="${r[4]?'win':''}"><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td class="mono">${esc(r[2])}</td><td>${r[4]?'<strong>'+esc(r[3])+'</strong>':esc(r[3])}</td></tr>`).join('')
+      }</table></div>
+
+      <h3 class="solh">Step 4 · The slider insight: buy only the coverage the gap needs</h3>
+      <p class="body">With switches, the answer is semantic at 100% for <strong>₹40</strong>, giving keyword 94, meaning 66, overall <strong>87%</strong>. The sliders let you ask a sharper question. The gap is 5 overall points, and semantic contributes <code>0.25 × 28 × coverage</code>:</p>
+      <pre class="codeblk">need:  0.25 × 28 × coverage ≥ 5   →   coverage ≥ 72%
+buy :  contextual retrieval 100% (₹0) + graph 100% (₹0) + semantic 72% (≈₹29)
+get :  kw 94   meaning 58   overall 85    target hit at ≈₹29 / 1,000 queries</pre>
+      <div class="anchor">${ic('anchor')} <span>Minimum build: <strong>free rungs first, then exactly enough of the one rung the failing bar demanded.</strong> ₹29 with sliders, ₹40 with switches, and ₹0 of it spent on rungs the healthy bar never asked for.</span></div>
+
+      <h3 class="solh">Step 5 · Why the tempting wrong builds are wrong</h3>
+      ${BUILD_WRONG.map(w=>`<div class="wrongbuild"><h4>✗ ${esc(w.h)}</h4><p>${esc(w.p)}</p></div>`).join('')}
+
+      <h3 class="solh">The takeaway</h3>
+      <div class="anchor">${ic('trending-up')} <span>The metric is not a grade; it is the roadmap. The failing subset <em>is</em> the build order, and coverage sliders mean you can buy that roadmap by the metre instead of by the kilometre.</span></div>
+      <p class="honest">When you fork this for your own corpus, your first deliverable is not code. It is a domain model and 100 golden pairs. Whoever models the domain owns the design.</p>
+    </div>
+  </div>`);
+  const body = $('.solbody',node), lock = $('.lockednote',node);
+  if(state.results.buildSolved){ lock.hidden = true; body.hidden = false; }
+  $('.sreveal',node).onclick = ()=>{
+    lock.hidden = true; body.hidden = false;
+    state.results.buildSolved = true; persist(); icons();
+    toast('Free rungs first, then exactly the coverage the failing bar demanded. Nothing else is engineering.','good');
+  };
   return node;
 }
 
@@ -1008,11 +1141,9 @@ function renderExChooser(step){
 /* ---------- receipt ---------- */
 function buildReceipt(){
   const names = { passport:'contextual retrieval', graph:'graph', semantic:'semantic', rewrite:'rewrite+HyDE', rerank:'rerank' };
-  const on = new Set((state.results.build && state.results.build.on) || []);
-  let kw = 88, sem = 32, spend = 0;
-  RUNGS.forEach(r=>{ if(on.has(r.id)){ kw = Math.min(97,kw+r.kw); sem = Math.min(97,sem+r.sem); spend += r.cost; } });
-  const overall = Math.round(.75*kw+.25*sem);
-  const techniques = [...on].map(id=>names[id]||id);
+  const cov = buildCoverage();
+  const { overall, spend } = buildScore(cov);
+  const techniques = RUNGS.filter(r=>cov[r.id]>0).map(r=>(names[r.id]||r.id)+' '+cov[r.id]+'%');
   const r = state.results;
   return [
     '100xEngineers · Context Engineering → Advanced RAG · Done Equals receipt',
@@ -1021,7 +1152,7 @@ function buildReceipt(){
     'the map (P1): '+(r.mapRoute ? r.mapRoute.right+'/4 routed at the cheapest passing layer' : 'not attempted'),
     'router (9)  : '+(r.router ? r.router.right+'/6 correct · invoice ₹'+r.router.tot+' vs optimal ₹'+r.router.opt : 'not attempted'),
     'audit (10)  : '+(typeof r.audit==='boolean' ? (r.audit?'flagged exactly the invented sentence':'attempted; missed the invented sentence') : 'not attempted'),
-    'build (11)  : '+(techniques.length?techniques.join(' + '):'floor only')+' · spend ₹'+spend+'/1k queries · overall recall '+RECALL_WORD(overall),
+    'build (11)  : '+(techniques.length?techniques.join(' + '):'floor only')+' · spend ₹'+spend+'/1k queries · overall recall@6 '+(Math.round(overall*10)/10)+'% (target 85%)',
     'chooser (12): '+((r.chooser && r.chooser.summary) || 'not attempted'),
     '',
     'Post this in your track channel. A facilitator verifies it against the lab;',
@@ -1087,7 +1218,7 @@ const RENDER = {
   exsearch:renderExSearch, exmeaning:renderExMeaning, exchunks:renderExChunks, exorphan:renderExOrphan,
   exfusion:renderExFusion, exrewrite:renderExRewrite, exrerank:renderExRerank, exgraph:renderExGraph,
   exloop:renderExLoop, exrouter:renderExRouter, exground:renderExGround, exbuild:renderExBuild,
-  exchooser:renderExChooser, receipt:renderReceipt, zoomtable:renderZoomTable, closing:renderClosing,
+  buildsolution:renderBuildSolution, exchooser:renderExChooser, receipt:renderReceipt, zoomtable:renderZoomTable, closing:renderClosing,
 };
 
 /* ---------- boot ---------- */

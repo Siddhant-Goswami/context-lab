@@ -235,12 +235,44 @@ const AUDIT_S = [
 ];
 
 /* ---------- ex 11: the build order ---------- */
+/* the measured floor: full-text search + module metadata, over all 100 pairs */
+const BUILD_FLOOR = { kw:88, sem:32, target:85, cap:97 };
+
+/* seven techniques collapse into five buyable rungs. two free, three priced per 1,000 queries.
+   every rung is a coverage slider: gain and cost both scale with the fraction of traffic it covers. */
 const RUNGS = [
   { id:'passport', n:'Contextual retrieval', s:'one situating sentence per chunk, at indexing', cost:0, kw:4, sem:6 },
   { id:'graph', n:'Knowledge graph', s:'built free from links already in the curriculum data, for relationship queries', cost:0, kw:2, sem:0 },
   { id:'semantic', n:'Semantic search (embeddings)', s:'match meaning, not letters', cost:40, kw:0, sem:28 },
   { id:'rewrite', n:'Query rewrite + HyDE', s:'translate the student into corpus language', cost:60, kw:2, sem:12 },
   { id:'rerank', n:'Cross-encoder rerank', s:'re-judge the top 20, keep 6', cost:120, kw:4, sem:10 },
+];
+
+/* 8 of the 100 golden pairs, live: each flips the moment ITS bar clears the level it needs */
+const BUILD_PAIRS = [
+  { q:'“What is LoRA training?”', doc:'LoRA Training', kind:'keyword', bar:'kw', need:85 },
+  { q:'“Explain the ReAct framework loop.”', doc:'The ReAct Framework', kind:'keyword', bar:'kw', need:90 },
+  { q:'“What does MCP actually solve?”', doc:'MCP: Model Context Protocol', kind:'keyword', bar:'kw', need:93 },
+  { q:'“golden pairs, recall@k: how do evals work?”', doc:'Evals: Golden Pairs', kind:'keyword', bar:'kw', need:96 },
+  { q:'“Why does my bot keep lying to students?”', doc:'Hallucination & Grounding', kind:'meaning', bar:'sem', need:40 },
+  { q:'“How do I make it answer from our own notes?”', doc:'Retrieval-Augmented Generation', kind:'meaning', bar:'sem', need:50 },
+  { q:'“Can it turn my selfies into professional headshots?”', doc:'LoRA Training', kind:'meaning', bar:'sem', need:58 },
+  { q:'“Which words count as close in meaning?”', doc:'Embeddings', kind:'meaning', bar:'sem', need:66 },
+];
+
+/* ---------- ex 11, continued: the solution walkthrough ---------- */
+const BUILD_PAID_TABLE = [
+  ['Semantic search (embeddings)','₹40','meaning +28','buy: it is the meaning bar’s rung', true],
+  ['Query rewrite + HyDE','₹60','keyword +2 · meaning +12','skip: 1.5× the price for less than half the meaning gain'],
+  ['Cross-encoder rerank','₹120','keyword +4 · meaning +10','skip: rerank re-orders candidates you already fetched, and the meaning failures never fetched one'],
+];
+const BUILD_WRONG = [
+  { h:'Rerank first, ₹120',
+    p:'keyword 92, meaning 42, overall 79.5: the most expensive rung on the board, still short of target. Rerank polishes the ranking of documents you already fetched; the meaning failures are documents that were never fetched at all. You paid ₹120 to re-judge an empty room.' },
+  { h:'Everything on, ₹220',
+    p:'Overall about 95, target smashed, and you are paying ₹191 more per 1,000 queries than the minimum build, forever, for points nobody asked for. Passing the eval is not the goal. Passing it at the smallest standing cost is.' },
+  { h:'Query rewrite instead of semantic, ₹60',
+    p:'keyword 96, meaning 50, overall 84.5: so close it hurts, ₹20 dearer than semantic at full coverage, and still failing. “Almost, but more expensive” is the signature of buying by plausibility instead of by the failing subset.' },
 ];
 
 /* ---------- ex 12: the chooser ---------- */
@@ -460,8 +492,11 @@ const MODULES = [
 { id:'build', title:'Ex 11 · The build order', icon:'trending-up', steps:[
   { t:'exbuild', eyebrow:'Exercise 11 of 12 · the capstone decision',
     title:'The build-order game.',
-    subtitle:'You now know seven techniques. Which do you buy, and in what order? Never by vibes; by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. The game: push overall recall past the target marker for the smallest spend. Try free things first. Watch WHICH bar is bleeding before you buy.',
+    subtitle:'You now know seven techniques. Which do you buy, how much of each, and in what order? Never by vibes; by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. Every rung here is a coverage slider, not a switch, so you can buy a fraction of one. Watch WHICH bar is bleeding before you spend a rupee.',
     fail:'✗ “it seems better”, the sentence that has burned more RAG budgets than any bug' },
+  { t:'buildsolution', eyebrow:'Exercise 11 · the solution',
+    title:'Buy the roadmap by the metre,\nnot by the kilometre.',
+    subtitle:'Play first. The solution means nothing until you have watched a paid rung move the wrong bar.' },
 ]},
 
 /* ---------- 13 · EX 12 · THE CHOOSER ---------- */
