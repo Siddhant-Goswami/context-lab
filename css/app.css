@@ -290,15 +290,17 @@ pre.codeblk{
 .sbucket{
   display:flex; gap:var(--space-3); align-items:flex-start;
   border:1px solid var(--border); border-radius:var(--r-md); background:var(--bg);
-  padding:var(--space-3) var(--space-4); position:relative;
+  padding:var(--space-3) var(--space-4);
 }
 .sbucket .bnum{
   font-family:var(--font-mono); font-weight:700; font-size:13px; color:#fff; background:var(--accent);
   width:24px; height:24px; border-radius:var(--r-pill); display:grid; place-items:center; flex:none; margin-top:2px;
 }
-.sbucket h5{ font-family:var(--font-display); font-size:var(--fs-body); font-weight:600; margin:0 0 2px; }
+.sbucket .sb-body{ flex:1; min-width:0; }
+.sbucket .sb-top{ display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-2); margin-bottom:2px; }
+.sbucket h5{ font-family:var(--font-display); font-size:var(--fs-body); font-weight:600; margin:0; }
 .sbucket p{ font-size:var(--fs-caption); color:var(--fg-2); margin:0; line-height:1.5; }
-.sbucket .sb-ex{ position:absolute; top:var(--space-3); right:var(--space-3); font-size:10px; color:var(--fg-muted); }
+.sbucket .sb-ex{ font-size:10px; color:var(--fg-muted); flex:none; white-space:nowrap; }
 
 /* ---------------- opened L3 box ---------------- */
 .l3wrap{ display:flex; flex-direction:column; gap:var(--space-2); }
@@ -410,6 +412,8 @@ table.rrf tr.win td{ color:#15803D; font-weight:700; }
 .mbar.overall > i.pass{ background:var(--success); }
 .mbar > i.bleed{ background:var(--error); }
 .mbar .target{ position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--fg); }
+.mbar .target .tmark{ position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-muted); }
+.meter .mlab b{ font-variant-numeric:normal; }
 .toggles{ display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0 var(--space-2); }
 .tg{ display:flex; align-items:center; gap:var(--space-3); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--space-3) var(--space-4); background:var(--bg); transition:.18s; cursor:pointer; }
 .tg:hover{ border-color:var(--border-strong); }
@@ -469,6 +473,37 @@ table.zoomt td:first-child{ font-family:var(--font-mono); font-size:11px; }
 .scrim.open{ opacity:1; pointer-events:auto; }
 .only-mobile{ display:none; }
 
+/* ---------------- collapsible cost math (stack) ---------------- */
+.costfold{ margin-top:var(--space-2); }
+.costfold summary{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:var(--space-2); }
+.costfold summary::-webkit-details-marker{ display:none; }
+.costfold summary .cost{ margin:0; padding:0; }
+.cm-toggle{ font-size:10.5px; color:var(--fg-muted); display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--border); border-radius:var(--r-pill); padding:2px 9px; }
+.cm-toggle [data-lucide]{ width:13px; height:13px; }
+.costfold summary:hover .cm-toggle{ border-color:var(--accent); color:var(--accent-press); }
+.costfold[open] summary .cm-toggle{ background:var(--accent-tint); border-style:solid; border-color:transparent; color:var(--accent-press); }
+.costmath{ margin-top:var(--space-3); border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1); padding:var(--space-3) var(--space-4); }
+.cm-head{ font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-press); margin-bottom:var(--space-2); }
+.cm-tbl{ width:100%; border-collapse:collapse; font-size:var(--fs-caption); }
+.cm-tbl td{ padding:4px 0; border-bottom:1px solid var(--border); vertical-align:top; color:var(--fg-2); }
+.cm-tbl td:last-child{ text-align:right; color:var(--fg); white-space:nowrap; padding-left:var(--space-3); }
+.cm-tbl tr:last-child td{ border-bottom:none; }
+.cm-note{ font-size:var(--fs-caption); color:var(--fg-muted); margin-top:var(--space-2); line-height:1.5; }
+
+/* ---------------- clean 4-step loop ---------------- */
+.loopsteps{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--space-3); margin:var(--space-4) 0 var(--space-3); }
+.lstep{ display:flex; gap:var(--space-3); align-items:flex-start; border:1px solid var(--border); border-radius:var(--r-md); background:var(--bg); padding:var(--space-3) var(--space-4); }
+.lstep .ln{ font-family:var(--font-mono); font-weight:700; font-size:12px; color:#fff; background:var(--accent); width:22px; height:22px; border-radius:var(--r-pill); display:grid; place-items:center; flex:none; }
+.lstep b{ display:block; font-size:var(--fs-body-sm); }
+.lstep span{ display:block; font-size:var(--fs-caption); color:var(--fg-muted); line-height:1.45; }
+.loopnote{ font-size:var(--fs-caption); color:var(--fg-2); margin:0; }
+
+/* ---------------- ChunkViz embed ---------------- */
+.bench-intro{ font-size:var(--fs-body-sm); color:var(--fg-2); line-height:var(--lh-body); margin:0 0 var(--space-3); }
+.bench-intro b{ color:var(--fg); }
+.chunkviz-wrap{ border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:#fff; margin-top:var(--space-3); }
+.chunkviz{ display:block; width:100%; height:620px; border:0; }
+
 @media (max-width:920px){
   #sidebar{ transform:translateX(-100%); transition:transform .28s var(--ease-out); box-shadow:var(--shadow-xl); }
   #sidebar.open{ transform:translateX(0); }
@@ -479,6 +514,7 @@ table.zoomt td:first-child{ font-family:var(--font-mono); font-size:11px; }
   .step-footer{ padding:var(--space-3) var(--space-4); }
   .step-dots{ display:none; }
   .step h1{ font-size:clamp(26px, 7vw, 34px); }
+  .chunkviz{ height:520px; }
 }
 
 @media (prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important; } }

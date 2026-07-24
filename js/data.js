@@ -6,7 +6,7 @@
    in the browser. Part 3 zooms back out.
    ============================================================ */
 
-/* ---------- the mini corpus (12 wiki pages Sage searches) ---------- */
+/* ---------- the mini corpus (12 curriculum pages Sage searches) ---------- */
 const DOCS = [
  { k:'rag', t:'Retrieval-Augmented Generation', m:'full-stack',
    x:'RAG retrieves the passages that hold the answer, augments the prompt with them, and generates a grounded, cited reply. Retrieval-augmented generation is how your app answers from your corpus instead of its training data.',
@@ -42,7 +42,7 @@ const DOCS = [
    x:'Fine-tuning (SFT) teaches a model new behaviour; RAG gives it new knowledge. Choose by asking whether your gap is skills or facts.',
    tags:['training','custom-model','sft'] },
  { k:'ship-cycle', t:'The Ship Cycle', m:'full-stack',
-   x:'The ship cycle: scope an MVP, build the cheap 75 percent first, launch weekly, and let usage - never vibes - pick the next investment.',
+   x:'The ship cycle: scope an MVP, build the cheapest slice first, launch weekly, and let usage - never vibes - pick the next investment.',
    tags:['mvp','launch','revenue'] },
 ];
 
@@ -85,9 +85,33 @@ const BUCKETS4 = [
 const LAYERS = [
   { lb:'L0', name:'Base model', d:'Training knowledge alone: “What is an API?”', cost:'free' },
   { lb:'L1', name:'In-context: put it in the room', d:'Static docs, instructions, few-shot examples in the prompt. Closes buckets 1 and 4. One page of track info turns the hallucinated recommendation into a correct answer. The token cost repeats on every request, fine for one page, ruinous for a thousand.', cost:'prompt tokens, per request' },
-  { lb:'L2', name:'Tools: fetch it at request time', d:'“Weather right now?” cannot live in a system prompt. Closes bucket 2. But “hourly weather for ten years, analyse the patterns” breaks it: the API can return millions of records, the model cannot receive them. The tool did its job; the failure is the handoff.', cost:'API calls + latency' },
+  { lb:'L2', name:'Tools: fetch it at request time', d:'“Weather right now?” cannot live in a system prompt. Closes bucket 2. But “hourly weather for ten years, analyse the patterns” breaks it: the API can return millions of records, the model cannot receive them. The tool did its job; the failure is the handoff.', cost:'2 model passes + tool tokens' },
   { lb:'L3', name:'RAG: a bouncer for the context window', d:'Not a way to access information: tools already do that. A selection strategy: which few pieces of a large base deserve the window for this question. Closes bucket 3. Chunking and indexing are paid once, at indexing time; sending everything is paid on every query, forever.', cost:'infrastructure + indexing', hot:true },
 ];
+
+/* ---------- per-layer cost math (collapsible example) ---------- */
+const COST_DETAIL = {
+  L0:{ headline:'model inference only', rows:[
+    ['the question','“What is an API?” ≈ 10 tokens in'],
+    ['added context','none'],
+    ['the answer','≈ 60 tokens out'] ],
+    note:'Nothing is added to the prompt. You pay for the question and the answer, nothing more.' },
+  L1:{ headline:'static context, re-sent on every request', rows:[
+    ['the question','≈ 10 tokens'],
+    ['one page of track info in the prompt','≈ 800 tokens, on every single request'],
+    ['the answer','≈ 60 tokens'] ],
+    note:'One page is cheap. The same 800 tokens across 100,000 requests is that page paid for 100,000 times.' },
+  L2:{ headline:'two model passes, plus whatever the tool returns', rows:[
+    ['pass 1 · prompt + tool definitions','≈ 20 + 150 tokens in → a tool call out'],
+    ['the tool result, appended','≈ 400 tokens (often far more)'],
+    ['pass 2 · prompt + result → answer','≈ 570 tokens in → 60 out'] ],
+    note:'The cost is not “one API call”. It is the tokens to read the request out of the prompt, plus the tokens to send the whole augmented prompt back through the model with the tool’s data attached, both passes, every time.' },
+  L3:{ headline:'indexing paid once, then a slim query', rows:[
+    ['indexing','embed every chunk, one time'],
+    ['retrieve','the top few chunks ≈ 6 × 120 tokens'],
+    ['prompt + those chunks → answer','≈ 740 tokens in → 60 out'] ],
+    note:'Compare with sending everything: the whole corpus in the prompt, on every query, forever. RAG pays once at indexing so the query stays slim.' },
+};
 
 /* ---------- C.W. AND B. truth-table game ---------- */
 const TT_CASES = [
@@ -103,7 +127,7 @@ const TT_CASES = [
 
 /* ---------- route the queue (Part 1 capstone) ---------- */
 const MAP_QUEUE = [
-  { q:'What is the difference between TCP and UDP?', a:0 },
+  { q:'What is an API?', a:0 },
   { q:'Which track should I choose at 100xEngineers? (one page of track info exists)', a:1 },
   { q:'Where is my order right now?', a:2 },
   { q:'Answer support questions from our 40,000-page policy archive.', a:3 },
@@ -123,7 +147,7 @@ const BUCKETS7 = [
 
 /* ---------- L3 opened: where the twelve exercises sit ---------- */
 const L3_STAGES = [
-  { stage:'ingest · paid once, at indexing time', chips:[{ n:3, t:'chunks & passports' }] },
+  { stage:'ingest · paid once, at indexing time', chips:[{ n:3, t:'chunks & context' }] },
   { stage:'the query side · fix the key before you search', chips:[{ n:2, t:'meaning mode (embeddings)' },{ n:5, t:'rewrite + HyDE' }] },
   { stage:'retrieve wide & cheap', chips:[{ n:1, t:'the floor (BM25)' },{ n:4, t:'fusion (RRF)' }] },
   { stage:'judge narrow & expensive', chips:[{ n:6, t:'rerank (cross-encoder)' }] },
@@ -156,7 +180,7 @@ const RERANK_C = [
   { t:'ReAct loops thought, action, observation: the model reasons, calls a tool, reads the result, repeats.', ce:0.30 },
   { t:'Embeddings turn text into vectors so closeness in space means closeness in meaning.', ce:0.10 },
   { t:'MCP, the Model Context Protocol, solves the N×M integration problem: one protocol, any client, any tool server. REST for AI.', ce:0.95, answer:true },
-  { t:'The ship cycle: scope an MVP, build the cheap 75% first, launch weekly.', ce:0.05 },
+  { t:'The ship cycle: scope an MVP, build the cheapest slice first, launch weekly.', ce:0.05 },
 ];
 
 /* ---------- ex 7: the curriculum graph ---------- */
@@ -212,8 +236,8 @@ const AUDIT_S = [
 
 /* ---------- ex 11: the build order ---------- */
 const RUNGS = [
-  { id:'passport', n:'Contextual passports', s:'one situating sentence per chunk, at indexing', cost:0, kw:4, sem:6 },
-  { id:'graph', n:'Knowledge graph', s:'built free from [[wikilinks]], for relationship queries', cost:0, kw:2, sem:0 },
+  { id:'passport', n:'Contextual retrieval', s:'one situating sentence per chunk, at indexing', cost:0, kw:4, sem:6 },
+  { id:'graph', n:'Knowledge graph', s:'built free from links already in the curriculum data, for relationship queries', cost:0, kw:2, sem:0 },
   { id:'semantic', n:'Semantic search (embeddings)', s:'match meaning, not letters', cost:40, kw:0, sem:28 },
   { id:'rewrite', n:'Query rewrite + HyDE', s:'translate the student into corpus language', cost:60, kw:2, sem:12 },
   { id:'rerank', n:'Cross-encoder rerank', s:'re-judge the top 20, keep 6', cost:120, kw:4, sem:10 },
@@ -224,7 +248,7 @@ const CHOOSER_Q = [
   { id:'corpus', q:'1 · How big is the corpus, honestly?', opts:[
     ['fits','fits in one context window'],['mid','hundreds to ~10k pages'],['huge','huge, or changes daily']]},
   { id:'mix', q:'2 · What does your 100-pair split say?', opts:[
-    ['kw','mostly keyword (the ~75/25 shape)'],['sem','heavy meaning + vocabulary gaps'],['rel','relationships + multi-hop']]},
+    ['kw','mostly keyword, the common split'],['sem','heavy meaning + vocabulary gaps'],['rel','relationships + multi-hop']]},
   { id:'stage', q:'3 · What are you shipping?', opts:[
     ['mvp','an MVP this month'],['prod','production, paying users']]},
 ];
@@ -232,11 +256,11 @@ const CHOOSER_LABEL = { fits:'fits in one window', mid:'hundreds to ~10k pages',
   kw:'mostly keyword', sem:'heavy meaning', rel:'relationship + multi-hop', mvp:'MVP', prod:'production' };
 
 const FIELD_GUIDE = [
-  ['Support bot over a wiki (Sage)','FTS + metadata','embeddings (the meaning bar)','Postgres or Supabase + pgvector'],
+  ['Support bot over curriculum data (Sage)','FTS + metadata','embeddings (the meaning bar)','Postgres or Supabase + pgvector'],
   ['Product or catalogue search','metadata filters + BM25','rarely any','the database you have; Elasticsearch if it already exists'],
   ['Long structured documents (financial, legal)','section index + metadata','reasoning over the index (the PageIndex pattern)','LLM + a document index'],
   ['Small internal corpus','none: load the context','none','context caching; the best RAG is no RAG'],
-  ['Prerequisite and dependency questions','graph from existing links','bounded agentic loop if multi-hop','wikilinks and foreign keys before any graph database'],
+  ['Prerequisite and dependency questions','graph from existing links','bounded agentic loop if multi-hop','existing links and foreign keys before any graph database'],
   ['Compliance-heavy answers','any of the above','grounding + faithfulness evals (not optional)','an evals harness before more retrieval'],
 ];
 
@@ -244,7 +268,7 @@ const FIELD_GUIDE = [
 const ZOOM_ROWS = [
   ['instrument','golden set: query → expected answer','golden pairs: query → the document that should answer it'],
   ['failure buckets','four: knowledge, freshness, scale, behaviour','seven: vocabulary gap through dirty corpus'],
-  ['unit you buy','a layer: L1, L2, L3','a rung: embeddings, rerank, graph, loop'],
+  ['unit you buy','a layer: L1, L2, L3','a technique: embeddings, rerank, graph, loop'],
   ['cheapest floor','L0, the base model','BM25 plus metadata, effectively free'],
   ['stop condition','the eval passes','recall@k hits target'],
   ['the anti-pattern','“it seems better”','“it seems better”'],
@@ -292,45 +316,38 @@ const MODULES = [
     subtitle:'Route each query to the cheapest layer that can pass. Overspending is a failure too: a layer the eval never demanded is pure cost.' },
   { t:'reveal', eyebrow:'The shape of what you just did',
     title:'The map is not a tree.\nIt is a loop.',
-    body:'<strong>1 · Measure</strong>: run the golden set → <strong>2 · Diagnose</strong>: sort failures into buckets → <strong>3 · Add one layer</strong>: exactly the one the biggest bucket names → <strong>4 · Re-measure</strong>: stop when the eval passes. One layer per iteration, so you always know which change moved the number.',
-    art:'<div class="loopdiag"><span class="nd hot">measure</span><span class="ar">→</span><span class="nd">diagnose</span><span class="ar">→</span><span class="nd">add ONE layer</span><span class="ar">→</span><span class="nd hot">re-measure</span><span class="back">↺ the failing subset is always the roadmap</span></div><div class="quotecard bad-quote">The anti-pattern: buying embeddings or a vector database because they are modern, before a single golden pair exists.</div>' },
+    body:'You did not walk a tree once. You ran a loop, and it repeats until the eval passes.',
+    art:'<div class="loopsteps"><div class="lstep"><span class="ln">1</span><div><b>Measure</b><span>run the golden set on what you have</span></div></div><div class="lstep"><span class="ln">2</span><div><b>Diagnose</b><span>sort the failures into the four buckets</span></div></div><div class="lstep"><span class="ln">3</span><div><b>Add one layer</b><span>exactly the one the biggest bucket names</span></div></div><div class="lstep"><span class="ln">4</span><div><b>Re-measure</b><span>stop when the eval passes</span></div></div></div><p class="loopnote">One layer per iteration, so you always know which change moved the number. The failing subset is always the roadmap.</p>' },
 ]},
 
 /* ---------- 2 · THE BRIDGE ---------- */
 { id:'bridge', title:'Opening the L3 box', icon:'package-open', steps:[
   { t:'question', eyebrow:'The bridge',
     q:'“Retrieve only what earns the window.”\n<em>How does that fail?</em>',
-    sub:'The map hands L3 one job in six words and treats it as a single box you buy once. It is not. Step inside, and retrieval fails in seven distinct ways.' },
+    sub:'On the map, L3 was one box. Up close, retrieval turns out to fail in more than one way, and each way has its own fix.' },
   { t:'sevenbuckets',
     title:'Bucket 3 splits into seven.',
     subtitle:'Zoom into the scale gap and it splits, the way a spectral line splits under a stronger instrument. Same diagnosis discipline, finer instrument.' },
   { t:'l3map',
-    title:'One box on the map,\ntwelve rungs inside it.',
-    subtitle:'The procedure does not change; only the nouns do. Golden set becomes golden pairs. Four buckets become seven. A layer becomes a rung. You buy rungs one at a time, named by the biggest failing bucket, never by vibes.' },
+    title:'One box on the map,\ntwelve techniques inside it.',
+    subtitle:'The procedure does not change; only the nouns do. Golden set becomes golden pairs. Four buckets become seven. A layer becomes a single technique. You buy them one at a time, named by the biggest failing bucket, never by vibes.' },
 ]},
 
 /* ---------- 3 · EX 1+2 · THE FLOOR ---------- */
 { id:'floor', title:'Ex 1–2 · The floor', icon:'search', steps:[
   { t:'exsearch', eyebrow:'Exercise 1 of 12 · the floor of L3',
     title:'Search that costs nothing.',
-    subtitle:'Your curriculum lives in a wiki no model was trained on, so Sage (the student support bot) must retrieve before it answers. This is a real mini-Sage over 12 curriculum pages, using the cheapest retrieval there is: keyword matching (BM25). Try the chips, or type your own, and read “behind the scenes”.' },
+    subtitle:'Your curriculum data was never in any model’s training set, so Sage (the student support bot) must retrieve before it can answer. This is a real mini-Sage over 12 curriculum pages, using the cheapest retrieval there is: keyword matching (BM25). Try the chips, or type your own, and read “behind the scenes”.' },
   { t:'reveal', eyebrow:'The MVP rule',
-    title:'The cheap floor answers ~75%\nof real student queries.',
-    body:'Zero keys, zero GPU, effectively free, and every match is explainable: these exact words, in this exact document. Everything else in this lab must <strong>earn its place</strong> against it. In ~90% of MVPs a simple index plus metadata is cheaper <em>and faster</em> than any embedding engine.' },
+    title:'The cheap floor answers\nmost real student queries.',
+    body:'Zero keys, zero GPU, effectively free, and every match is explainable: these exact words, in this exact document. Everything else in this lab must <strong>earn its place</strong> against it. In most MVPs a simple index plus metadata is cheaper <em>and faster</em> than any embedding engine.' },
   { t:'exmeaning', eyebrow:'Exercise 2 of 12 · bucket 1 · vocabulary gap',
     title:'The query that breaks the floor.',
     subtitle:'Submit the pre-loaded query. Zero results: the corpus never says “lying”; it says “hallucination”, “grounding”. The student and the corpus mean the same thing and share no letters. Then flip on Meaning mode and search again.',
     fail:'✗ “make the bot stop lying”' },
-  { t:'quiz', gate:true, eyebrow:'Checkpoint',
-    prompt:'When do you buy embeddings?',
-    options:[
-      { label:'When your failing queries look like the vocabulary gap', correct:true,
-        fb:'On the real eval set the free floor scores 88% on keyword-style queries but 32% on meaning-style ones. You buy embeddings when YOUR failures look like that split, not because they’re modern.' },
-      { label:'Always: embeddings are the modern default for RAG',
-        fb:'That is the anti-pattern from Part 1 wearing new clothes. The floor answers ~75% for free; buy the rung your failing bucket names.' },
-      { label:'Never: BM25 plus metadata is always enough',
-        fb:'“make the bot stop lying” just returned zero results with the answer sitting in the corpus. The ~25% meaning-style failures are real; the question is only when they justify the spend.' },
-    ]},
+  { t:'question', eyebrow:'The decision rule',
+    q:'So when do you\n<em>buy</em> embeddings?',
+    sub:'Not because they are modern. You buy them the day your own failing queries start looking like the one you just fixed: same meaning, no shared words. Until that shows up in your eval, the free floor is still winning.' },
 ]},
 
 /* ---------- 4 · EX 3 · INGESTION ---------- */
@@ -340,11 +357,11 @@ const MODULES = [
     subtitle:'Before any search, documents get cut into chunks, the units retrieval actually returns. Two ways to cut. Try naive: every 180 characters, wherever that lands. The red fragments are thoughts sliced mid-sentence: retrieval will return them, generation will cite them, and you’ll ship fluent, source-tagged garbage.' },
   { t:'exorphan', eyebrow:'Exercise 3, continued · bucket 3 · orphaned chunk',
     title:'The orphan demo.',
-    subtitle:'Search the locked query. You retrieve “then redeploy with the flag enabled”, a chunk that lost its document, its lecture, its flag. Technically retrieved, practically useless. Then stamp passports: one situating sentence prepended to every chunk at indexing time. Search again.',
+    subtitle:'Search the locked query. You retrieve “then redeploy with the flag enabled”, a chunk that lost its document, its lecture, its flag. Technically retrieved, practically useless. Then apply contextual retrieval: one situating sentence, saying where each chunk comes from, is prepended to every chunk at indexing time. Search again.',
     fail:'✗ “Which flag do I redeploy with?”' },
   { t:'reveal', eyebrow:'The receipt',
     title:'Pay at indexing time, once,\nnot at query time, forever.',
-    body:'No architecture downstream of ingestion recovers information ingestion destroyed. Garbage in isn’t garbage out; it’s <strong>cited</strong> garbage out, which is worse. Anthropic measured the passport move at <strong>−35% failed retrievals</strong> (−49% combined with a contextual keyword index, −67% with a reranker on top).' },
+    body:'No architecture downstream of ingestion recovers information ingestion destroyed. Garbage in isn’t garbage out; it’s <strong>cited</strong> garbage out, which is worse. Anthropic measured this exact move, which they call <strong>contextual retrieval</strong>, at a large drop in failed retrievals, more still when paired with a keyword index and a reranker. <a href="https://www.anthropic.com/engineering/contextual-retrieval" target="_blank" rel="noopener">Read their write-up →</a>' },
 ]},
 
 /* ---------- 5 · EX 4 · FUSION ---------- */
@@ -371,18 +388,18 @@ const MODULES = [
 { id:'rewrite', title:'Ex 5 · Fix the query', icon:'languages', steps:[
   { t:'exrewrite', eyebrow:'Exercise 5 of 12 · buckets 1 & 2 · bad search key',
     title:'Fix the query before you search.',
-    subtitle:'The corpus speaks of “AAA agent progression” and “agentic workflows”. The query as typed is simply a bad search key, and why should a student speak your corpus’s language? Put a cheap LLM in front with one job: translation. Click Rewrite, then try the strangest trick in RAG: HyDE.',
+    subtitle:'The corpus speaks of “AAA agent progression” and “agentic workflows”. The query as typed is simply a bad search key, and why should a student speak your corpus’s language? Put a cheap LLM in front with one job: translation. Click Rewrite, then try a stranger move: search with a made-up answer instead of the question.',
     fail:'✗ “When will I learn how to automate my job?”' },
   { t:'reveal', eyebrow:'The geometry',
     title:'Answers live near answers.\nQuestions don’t.',
-    body:'HyDE asks an LLM to <em>hallucinate a plausible answer</em> (factually unreliable!) and searches with <strong>that</strong> instead of the question. It works because of geometry: a fake answer is phrased like the real answers, so it lands inside the right cluster. Factually worthless, geometrically precious. And the rewriter’s dictionary (the <strong>lexicon</strong>, two columns of “what students say → what the corpus says”, harvested from your own failed queries) is the highest-ROI component in the whole system.' },
+    body:'That move has a name: <strong>HyDE</strong> (Hypothetical Document Embeddings). You ask an LLM to <em>make up a plausible answer</em> (factually unreliable!) and search with <strong>that</strong> instead of the question. It works because of geometry: a fake answer is phrased like the real answers, so it lands inside the right cluster. Factually worthless, geometrically precious. And the rewriter’s dictionary (the <strong>lexicon</strong>, two columns of “what students say → what the corpus says”, harvested from your own failed queries) is the highest-ROI component in the whole system.' },
 ]},
 
 /* ---------- 7 · EX 6 · RERANK ---------- */
 { id:'rerank', title:'Ex 6 · Rerank', icon:'list-ordered', steps:[
   { t:'exrerank', eyebrow:'Exercise 6 of 12 · bucket 4 · right chunk, wrong rank',
     title:'Retrieval worked.\nThe answer still failed.',
-    subtitle:'“What is MCP and what problem does it solve?”: the perfect chunk came back at position 5, and the generator reads the top 3. Fast retrieval is a bi-encoder: every chunk embedded alone, months before your query existed. Your turn to be the fix: reorder the candidates so the best answer is #1, then run the cross-encoder and compare.' },
+    subtitle:'“What is MCP and what problem does it solve?”: the perfect chunk came back at position 5, and the generator reads the top 3. The fast first pass embeds every chunk on its own, long before your question existed, so it never reads your query and the chunk side by side. Your turn to be the fix: reorder the candidates so the best answer is #1, reading question and chunk together every time, then run the careful re-ranker and compare.' },
   { t:'quiz', gate:true, eyebrow:'Checkpoint',
     prompt:'Why not just cross-encode the whole corpus for every query?',
     options:[
@@ -399,21 +416,24 @@ const MODULES = [
 { id:'graph', title:'Ex 7 · The graph', icon:'waypoints', steps:[
   { t:'question', eyebrow:'Exercise 7 of 12 · bucket 6 · relationship, not passage',
     q:'“Which lectures assume I already know\n<em>tool calling</em>?”',
-    sub:'Search all you want: no chunk contains this sentence. The answer is a pattern ACROSS documents. Similarity search returns nodes; the question is about the wires.' },
+    sub:'Search all you want: no chunk contains this sentence. The answer is a pattern ACROSS documents, in how they connect. Similarity search returns single passages; this question is about the links between them.' },
   { t:'exgraph',
     title:'Read the answer off the edges.',
-    subtitle:'Wiki pages already declare their edges as [[wikilinks]], so the graph costs nothing to build; in the real Sage: 286 nodes, 855 edges, zero extraction cost. Click the tool-calling node; its incoming edges light up. Then widen by one hop and read your answer straight off the graph.' },
+    subtitle:'Build a knowledge graph: every topic is a node, every reference from one topic to another is an edge. Your curriculum data already records which lesson points to which, so the graph is almost free to build. Retrieval here is not similarity, it is traversal: start at the topic the question names, then follow the edges outward. Click the tool-calling node, then widen by one hop, and read the answer off the connections.' },
+  { t:'reveal', eyebrow:'This is Graph RAG',
+    title:'Some answers live in the edges,\nnot the passages.',
+    body:'When a question is about how things relate, prerequisites, dependencies, what builds on what, no single chunk holds the answer, and ranking passages will never find it. <strong>Graph RAG</strong> turns retrieval into a walk: it starts at the entity the question names and follows the connections, one hop at a time. Build the graph from structure you already own, existing links, foreign keys, folder trees, before you reach for a dedicated graph database.' },
 ]},
 
 /* ---------- 9 · EX 8 · THE LOOP ---------- */
 { id:'loop', title:'Ex 8 · The loop', icon:'repeat', steps:[
   { t:'exloop', eyebrow:'Exercise 8 of 12 · bucket 5 · needs a second search',
     title:'When one search can never be enough.',
-    subtitle:'Even perfectly rewritten, one retrieval pass can’t answer this: the first result only reveals what to look for next. You are the agent: run the first search, read what came back, and decide: answer now, or search again? Try answering early. Every hop costs money; the invoice is ticking.',
+    subtitle:'Even perfectly rewritten, one retrieval pass can’t answer this: the first result only reveals what to look for next. You run the loop by hand: do the first search, read what came back, and decide: answer now, or search again? Try answering early. Every hop costs money; the invoice is ticking.',
     fail:'✗ “When will I learn to automate my job?”, properly this time' },
-  { t:'reveal', eyebrow:'The architectural change',
-    title:'Retrieval stops being a step.\nIt becomes a tool in a loop.',
-    body:'That word, <em>realise</em>, is the whole change. Search, read, decide: it’s the tool-calling loop from the Agents module, pointed at your own corpus instead of the weather API. The stack closes into a circle: retrieval becomes <code>search_knowledge_base</code>, exactly as promised. And every loop needs a done-condition and a bound (Sage stops at 4 hops), or the ₹80,000 invoice returns with interest.' },
+  { t:'reveal', eyebrow:'The shape of the fix',
+    title:'One search becomes\nsearch, read, decide.',
+    body:'Each result did not answer the question; it told you what to search for next. So a single retrieval step turns into a small loop: search, read what came back, then decide whether you can answer yet or need one more search. The skill is not the searching; it is knowing when you have enough to stop. Every loop needs a stop condition and a hard limit (this lab caps it at four searches), or the runaway invoice keeps climbing.' },
 ]},
 
 /* ---------- 10 · EX 9 · THE ROUTER ---------- */
@@ -423,7 +443,7 @@ const MODULES = [
     subtitle:'“What is RAG?” sent through the agentic loop: four LLM hops, real money, for a lookup the free floor answers instantly. Nothing wrong with the answer: the failure is the invoice. Three paths, three costs: single ~₹0.5, graph ~₹1, agentic ~₹8. Route the morning queue; your invoice is compared with the optimal one.' },
   { t:'reveal', eyebrow:'The principle',
     title:'The receptionist classifies.\nIt never solves.',
-    body:'It can run on every query precisely <em>because</em> it does nothing else. In Sage this is one cheap LLM call, with a keyless regex fallback: words like <em>prerequisite, requires, which lectures</em> smell like graph. The cheap 75% goes down the cheap path; this is the Part 1 routing decision, re-instantiated inside L3.' },
+    body:'It can run on every query precisely <em>because</em> it does nothing else. In Sage this is one cheap LLM call, with a keyless regex fallback: words like <em>prerequisite, requires, which lectures</em> smell like graph. The cheap majority goes down the cheap path; this is the Part 1 routing decision, re-instantiated inside L3.' },
 ]},
 
 /* ---------- 11 · EX 10 · GROUNDING ---------- */
@@ -440,7 +460,7 @@ const MODULES = [
 { id:'build', title:'Ex 11 · The build order', icon:'trending-up', steps:[
   { t:'exbuild', eyebrow:'Exercise 11 of 12 · the capstone decision',
     title:'The build-order game.',
-    subtitle:'You now know seven techniques. Which do you buy, and in what order? Never by vibes; by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. The game: reach 85% overall recall for the smallest spend. Try free things first. Watch WHICH bar is bleeding before you buy.',
+    subtitle:'You now know seven techniques. Which do you buy, and in what order? Never by vibes; by evals: golden pairs scored as recall@k, split keyword-style vs meaning-style. The game: push overall recall past the target marker for the smallest spend. Try free things first. Watch WHICH bar is bleeding before you buy.',
     fail:'✗ “it seems better”, the sentence that has burned more RAG budgets than any bug' },
 ]},
 
@@ -464,7 +484,7 @@ const MODULES = [
     subtitle:'You have now run the same loop twice without changing a single step. Only the nouns changed.' },
   { t:'closing',
     title:'Minimum sufficient context.',
-    body:'The goal is never the <em>maximum</em> possible context. It is the <strong>minimum sufficient context</strong> for a correct answer, at the lowest layer that passes the eval, on the cheapest rung that closes the failing bucket.<br><br>The last AI feature you built: which layer is it on, which rung is it on, and can you show the failing golden pairs that justified each?' },
+    body:'The goal is never the <em>maximum</em> possible context. It is the <strong>minimum sufficient context</strong> for a correct answer, at the lowest layer that passes the eval, with the cheapest technique that closes the failing bucket.<br><br>The last AI feature you built: which layer is it on, which technique closes it, and can you show the failing golden pairs that justified each?' },
 ]},
 
 ];

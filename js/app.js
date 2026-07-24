@@ -258,11 +258,19 @@ function renderStack(step){
   </div>`);
   const wrap = $('.stack',node);
   LAYERS.forEach(L=>{
+    const cd = COST_DETAIL[L.lb];
+    const math = cd ? `<div class="costmath">
+        <div class="cm-head mono">${esc(cd.headline)}</div>
+        <table class="cm-tbl">${cd.rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td></tr>`).join('')}</table>
+        <div class="cm-note">${esc(cd.note)}</div>
+      </div>` : '';
     wrap.appendChild(el(`<div class="stackrow ${L.hot?'hot':''}">
       <span class="lb">${L.lb}</span>
-      <div class="sr-body"><strong>${esc(L.name)}</strong><span class="d">${esc(L.d)}</span></div>
-      <span class="cost">${esc(L.cost)}</span></div>`));
+      <div class="sr-body"><strong>${esc(L.name)}</strong><span class="d">${esc(L.d)}</span>
+        <details class="costfold"><summary><span class="cost">${esc(L.cost)}</span><span class="cm-toggle mono">${ic('calculator')} show the math</span></summary>${math}</details>
+      </div></div>`));
   });
+  icons();
   return node;
 }
 
@@ -349,8 +357,7 @@ function renderSevenBuckets(step){
   const wrap = $('.seven',node);
   BUCKETS7.forEach(b=>{
     wrap.appendChild(el(`<div class="sbucket"><span class="bnum">${b.n}</span>
-      <div><h5>${esc(b.name)}</h5><p>${esc(b.d)}</p></div>
-      <span class="sb-ex mono">${esc(b.ex)}</span></div>`));
+      <div class="sb-body"><div class="sb-top"><h5>${esc(b.name)}</h5><span class="sb-ex mono">${esc(b.ex)}</span></div><p>${esc(b.d)}</p></div></div>`));
   });
   node.appendChild(el(`<div class="anchor" style="margin-top:var(--space-5)">${ic('anchor')} The seven retrieval buckets are the fine structure of bucket 3. Each exercise ahead starts with a query that fails into one of them, and you derive the fix by doing it.</div>`));
   return node;
@@ -460,39 +467,29 @@ function renderExMeaning(step){
   return node;
 }
 
-/* ---------- EX 3a · chunking bench ---------- */
+/* ---------- EX 3a · chunking bench (ChunkViz) ---------- */
+const CURRICULUM_PASSAGE =
+  CHUNK_DOC.body.map(s=>s[0]+'. '+s[1]).join('\n\n') + '\n\n' +
+  'Retrieval-Augmented Generation. ' + DOCS.find(d=>d.k==='rag').x + '\n\n' +
+  'Embeddings. ' + DOCS.find(d=>d.k==='embeddings').x;
 function renderExChunks(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Cutting one wiki page into chunks', `
+    ${benchHTML('Chunk the curriculum yourself', `
+      <p class="bench-intro">This is the live <b>ChunkViz</b> tool (by Greg Kamradt). Copy a page of curriculum data, paste it into the box, then drag the <b>chunk size</b> slider: small character-count chunks slice thoughts mid-sentence, and splitting on structure keeps each idea whole.</p>
       <div class="presets">
-        <button class="btn btn--secondary btn--sm cut-naive">Naive: every 180 chars</button>
-        <button class="btn btn--primary btn--sm cut-smart">On meaning: by heading</button>
+        <button class="btn btn--primary btn--sm copytext">${ic('copy')} Copy curriculum text</button>
+        <a class="btn btn--secondary btn--sm" href="https://chunkviz.up.railway.app/" target="_blank" rel="noopener">${ic('external-link')} Open in a new tab</a>
       </div>
-      <div class="chunkdoc"></div>`)}
+      <div class="chunkviz-wrap"><iframe class="chunkviz" src="https://chunkviz.up.railway.app/" title="ChunkViz, a chunk-size visualizer" loading="lazy"></iframe></div>`,
+      'paste the curriculum text · drag the chunk-size slider · watch thoughts get sliced')}
   </div>`);
-  const doc = $('.chunkdoc',node);
-  function draw(naive){
-    doc.innerHTML = '';
-    if(!naive){
-      CHUNK_DOC.body.forEach((sec,i)=>{
-        doc.appendChild(el(`<div class="ch"><span class="cid mono">chunk ${i+1} · “${esc(CHUNK_DOC.title)} › ${esc(sec[0])}”</span>${esc(sec[1])}</div>`));
-      });
-    } else {
-      const full = CHUNK_DOC.body.map(s=>s[1]).join(' ');
-      let i = 0, n = 1;
-      while(i < full.length){
-        const piece = full.slice(i, i+180);
-        const cutMid = (i+180 < full.length) && !/[.!?]\s*$/.test(piece);
-        doc.appendChild(el(`<div class="ch ${cutMid?'bad':''}"><span class="cid mono">chunk ${n} · chars ${i}–${i+piece.length}${cutMid?' · cut mid-thought':''}</span>${esc(piece)}${cutMid?' <span class="cut">✂ sliced here</span>':''}</div>`));
-        i += 180; n++;
-      }
-      toast('The red chunks are future citations. Fluent, source-tagged, and wrong.','bad');
-    }
-  }
-  $('.cut-naive',node).onclick = ()=>draw(true);
-  $('.cut-smart',node).onclick = ()=>draw(false);
-  draw(false);
+  $('.copytext',node).onclick = ()=>{
+    const txt = CURRICULUM_PASSAGE;
+    const done = ()=>toast('Curriculum text copied. Paste it into ChunkViz above, then drag the chunk-size slider.','good');
+    const fallback = ()=>{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');done();}catch(e){toast('Copy failed; select and copy manually.','bad');} document.body.removeChild(ta); };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(fallback); else fallback();
+  };
   return node;
 }
 
@@ -501,10 +498,10 @@ function renderExOrphan(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
     ${benchHTML('The orphan demo', `
-      <div class="sim-in"><input class="input" value="Which flag do I redeploy with?" readonly aria-label="Student question (locked)"><button class="btn btn--primary go">Search</button><button class="btn btn--secondary stamp">Stamp passports</button></div>
+      <div class="sim-in"><input class="input" value="Which flag do I redeploy with?" readonly aria-label="Student question (locked)"><button class="btn btn--primary go">Search</button><button class="btn btn--secondary stamp">Add context to each chunk</button></div>
       <div class="glabel">retrieved</div>
       <div class="results"><div class="rdoc mut"><div class="rx">search to feel the orphan failure</div></div></div>`)}
-    <p class="honest">Honest note: this bench replays one fixed query (the box is locked) so every student feels the same orphan failure. The passport move itself is real: same chunk, one situating sentence, written once at indexing time.</p>
+    <p class="honest">Honest note: this bench replays one fixed query (the box is locked) so every student feels the same orphan failure. Contextual retrieval itself is real: same chunk, one situating sentence, written once at indexing time.</p>
   </div>`);
   const res = $('.results',node);
   let passport = false;
@@ -521,8 +518,8 @@ function renderExOrphan(step){
   }
   $('.go',node).onclick = run;
   $('.stamp',node).onclick = function(){
-    passport = true; this.textContent = 'Passports stamped ✓'; this.disabled = true; run();
-    toast('One sentence per chunk, written once at indexing time. Anthropic: −35% failed retrievals.','good');
+    passport = true; this.textContent = 'Context added ✓'; this.disabled = true; run();
+    toast('One sentence per chunk, written once at indexing time. Anthropic call this contextual retrieval.','good');
   };
   return node;
 }
@@ -580,15 +577,15 @@ function renderExRewrite(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
     ${benchHTML('Query in, better key out', `
-      <div class="sim-in"><input class="input" value="When will I learn how to automate my job?" readonly aria-label="Student question (locked)"><button class="btn btn--primary rw">Rewrite</button><button class="btn btn--secondary hyde">HyDE</button></div>
+      <div class="sim-in"><input class="input" value="When will I learn how to automate my job?" readonly aria-label="Student question (locked)"><button class="btn btn--primary rw">Rewrite</button><button class="btn btn--secondary hyde">Search with a fake answer</button></div>
       <div class="glabel">search key actually used</div>
       <div class="keybox"><span class="mut">the raw query, so far</span></div>
       <div class="glabel">retrieved</div>
-      <div class="results"><div class="rdoc mut"><div class="rx">rewrite or HyDE to see the move</div></div></div>`)}
+      <div class="results"><div class="rdoc mut"><div class="rx">rewrite, or search with a fake answer, to see the move</div></div></div>`)}
     <div class="bts"><div class="btslabel mono">the meaning-space map · watch where the probe lands</div>
       <div class="mapwrap"><canvas class="spacemap" width="560" height="300"></canvas></div>
-      <pre class="codeblk bts-pre">(rewrite or HyDE to see the move)</pre></div>
-    <p class="honest">Honest note: the rewrite and the HyDE probe are precomputed for this one query (the box is locked) so you can feel the move without an API key. In real Sage a cheap LLM produces both, live, from the lexicon. The decision logic is identical.</p>
+      <pre class="codeblk bts-pre">(rewrite, or search with a fake answer, to see the move)</pre></div>
+    <p class="honest">Honest note: the rewrite and the probe are precomputed for this one query (the box is locked) so you can feel the move without an API key. In real Sage a cheap LLM produces both, live, from the lexicon. The decision logic is identical.</p>
   </div>`);
   const keybox = $('.keybox',node), res = $('.results',node), pre = $('.bts-pre',node), cv = $('.spacemap',node);
   let mode = 'raw';
@@ -630,7 +627,7 @@ function renderExRewrite(step){
   };
   $('.hyde',node).onclick = ()=>{
     mode = 'hyde';
-    keybox.innerHTML = '<b>HyDE probe (a hallucinated answer):</b> '+esc(HYDE_KEY);
+    keybox.innerHTML = '<b>the probe (a made-up answer):</b> '+esc(HYDE_KEY);
     res.innerHTML = resultsHTML(semSearch(HYDE_KEY), true); map();
     pre.textContent = 'We searched with a FAKE ANSWER, not the question.\n\nLook at the map: the question sits far from every cluster: questions are\nphrased like questions. The fake answer is phrased like the real answers,\nso it lands inside the agents cluster, and its nearest neighbours are the\ntrue passages. Factually worthless, geometrically precious.';
     toast('Answers live near answers. Questions don’t. That is the whole trick.','good');
@@ -643,18 +640,18 @@ function renderExRewrite(step){
 function renderExRerank(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Candidates in bi-encoder order: fix the ranking', `
+    ${benchHTML('Candidates in fast-pass order: fix the ranking', `
       <div class="cands"></div>
       <div class="presets" style="margin-top:var(--space-3)">
-        <button class="btn btn--primary btn--sm runce">Run cross-encoder</button>
+        <button class="btn btn--primary btn--sm runce">Run the careful re-ranker</button>
         <button class="btn btn--secondary btn--sm resetce">Reset order</button>
       </div>
       <div class="costnote" hidden>
-        <div class="costbox badc"><b class="mono">cross-encode everything</b>951 chunks × every query, one model pass per pair. Unshippable.</div>
-        <div class="costbox goodc"><b class="mono">staged (what Sage does)</b>cheap search screens ~20 → cross-encoder judges those → top 6 to the generator.</div>
+        <div class="costbox badc"><b class="mono">re-rank everything</b>every chunk × every query, one model pass per pair. Unshippable.</div>
+        <div class="costbox goodc"><b class="mono">staged (what Sage does)</b>cheap search screens a shortlist → the careful pass judges those → top 6 to the generator.</div>
       </div>`)}
-    <div class="bts"><div class="btslabel mono">behind the scenes</div><pre class="codeblk bts-pre">Bi-encoder: query and chunks embedded separately, in mutual ignorance → fast, blind ranking.
-Cross-encoder: reads (query + chunk) together per pair → accurate, expensive. Run it to see scores.</pre></div>
+    <div class="bts"><div class="btslabel mono">behind the scenes</div><pre class="codeblk bts-pre">The fast pass embeds every chunk on its own, before your query exists → fast, but blind to the question.
+The careful pass reads (query + chunk) together, one pair at a time → accurate, but expensive. Run it to see scores.</pre></div>
   </div>`);
   const list = $('.cands',node), pre = $('.bts-pre',node), costs = $('.costnote',node);
   let order = [0,1,2,3,4,5], ran = false;
@@ -681,14 +678,17 @@ Cross-encoder: reads (query + chunk) together per pair → accurate, expensive. 
     order = [...order].sort((a,b)=>RERANK_C[b].ce-RERANK_C[a].ce);
     draw();
     costs.hidden = false;
-    pre.textContent = 'Cross-encoder scores (query + chunk judged TOGETHER):\n'+
+    pre.textContent = 'These two passes have names.\n'+
+      'The fast one is a BI-ENCODER: query and chunks embedded separately, in mutual ignorance.\n'+
+      'The careful one is a CROSS-ENCODER: it reads (query + chunk) together, one pair at a time.\n\n'+
+      'Scores, judged together:\n'+
       RERANK_C.map(c=>'  '+c.ce.toFixed(2)+'  '+c.t.slice(0,58)+'…').join('\n')+
       '\n\nYour #1 pick '+(RERANK_C[myTop].answer
-        ? 'matched the cross-encoder. You read query and chunk together. That IS the algorithm.'
-        : 'differed. Compare with the 0.95 chunk: it answers BOTH halves of the question (what MCP is + what problem it solves).');
+        ? 'matched the careful re-ranker. You read query and chunk together. That IS the algorithm.'
+        : 'differed. Compare with the top-scoring chunk: it answers BOTH halves of the question (what MCP is + what problem it solves).');
     toast(RERANK_C[myTop].answer
-      ? 'You out-ranked the bi-encoder. Now imagine paying for that judgement 951 times per query.'
-      : 'The cross-encoder promotes the chunk that answers both halves. Cheap retrieval finds; expensive judgement decides.', RERANK_C[myTop].answer?'good':'');
+      ? 'You out-ranked the fast pass. Now imagine paying for that judgement on every chunk, every query.'
+      : 'The careful re-ranker promotes the chunk that answers both halves. Cheap retrieval finds; expensive judgement decides.', RERANK_C[myTop].answer?'good':'');
   };
   $('.resetce',node).onclick = ()=>{ order = [0,1,2,3,4,5]; ran = false; costs.hidden = true; draw(); };
   return node;
@@ -838,7 +838,7 @@ function renderExRouter(step){
     pre.textContent = right+'/6 routed correctly · your invoice ₹'+tot.toFixed(1)+' vs optimal ₹'+opt.toFixed(1)+
       '\n\nrelationship words (prerequisite, before, builds on, which lectures) → graph'+
       '\npersonal multi-part synthesis (plan, roadmap, "when will I…") → agentic'+
-      '\neverything else → single. The cheap 75% goes down the cheap path.';
+      '\neverything else → single. The cheap majority goes down the cheap path.';
     if(answered===ROUTER_Q.length){
       state.results.router = { right, tot:+tot.toFixed(1), opt:+opt.toFixed(1) }; persist();
       toast(right===6 ? '6/6. You are a working receptionist. Notice you never answered a single question.' : 'Compare the two invoices. Routing is the cost model as architecture.', right===6?'good':'');
@@ -895,17 +895,18 @@ function renderExGround(step){
 }
 
 /* ---------- EX 11 · the build order ---------- */
+const RECALL_WORD = v => v>=85 ? 'on target' : v>=72 ? 'close' : v>=55 ? 'getting there' : v>=40 ? 'weak' : 'very weak';
 function renderExBuild(step){
   const node = el(`<div class="step step--wide">
     ${stepHead(step)}
-    ${benchHTML('Reach 85% overall recall for the least money', `
-      <div class="meter"><div class="mlab mono"><span>keyword-style queries</span><b class="kwv">88%</b></div><div class="mbar"><i class="kwb" style="width:88%"></i></div></div>
-      <div class="meter"><div class="mlab mono"><span>meaning-style queries</span><b class="semv">32%</b></div><div class="mbar"><i class="semb" style="width:32%"></i></div></div>
-      <div class="meter"><div class="mlab mono"><span><strong>overall recall@6</strong> · target 85%</span><b class="allv">74%</b></div><div class="mbar overall"><i class="allb" style="width:74%"></i><span class="target" style="left:85%"></span></div></div>
+    ${benchHTML('Reach the target recall for the least money', `
+      <div class="meter"><div class="mlab mono"><span>keyword-style queries</span><b class="kwv"></b></div><div class="mbar"><i class="kwb"></i></div></div>
+      <div class="meter"><div class="mlab mono"><span>meaning-style queries</span><b class="semv"></b></div><div class="mbar"><i class="semb"></i></div></div>
+      <div class="meter"><div class="mlab mono"><span><strong>overall recall</strong></span><b class="allv"></b></div><div class="mbar overall"><i class="allb"></i><span class="target" style="left:85%"><span class="tmark mono">target</span></span></div></div>
       <div class="toggles"></div>
       <div class="spend mono">spend: <b class="spendv">₹0</b> / 1,000 queries <span class="buildmsg"></span></div>`)}
-    <div class="bts"><div class="btslabel mono">behind the scenes · what each rung moved</div><pre class="codeblk bts-pre">floor (free)                     kw 88   sem 32   overall 74
-toggle rungs to watch the split move: the failing subset is your roadmap</pre></div>
+    <div class="bts"><div class="btslabel mono">behind the scenes · what each technique moved</div><pre class="codeblk bts-pre">floor (free)                     keyword: strong   meaning: very weak
+toggle techniques to watch the split move: the failing subset is your roadmap</pre></div>
   </div>`);
   const toggles = $('.toggles',node), pre = $('.bts-pre',node);
   const on = new Set((state.results.build && state.results.build.on) || []);
@@ -917,30 +918,30 @@ toggle rungs to watch the split move: the failing subset is your roadmap</pre></
   });
   function calc(){
     let kw = 88, sem = 32, spend = 0;
-    const lines = ['floor (free)                     kw 88   sem 32   overall 74'];
+    const lines = ['floor (free)                     keyword: strong   meaning: very weak'];
     RUNGS.forEach(r=>{ if(on.has(r.id)){
       kw = Math.min(97,kw+r.kw); sem = Math.min(97,sem+r.sem); spend += r.cost;
-      lines.push('+ '+r.n.toLowerCase().padEnd(29)+' kw '+String(kw).padStart(2)+'   sem '+String(sem).padStart(2)+'   overall '+Math.round(.75*kw+.25*sem));
+      lines.push('+ '+r.n.toLowerCase().padEnd(29)+' keyword: '+RECALL_WORD(kw).padEnd(14)+' meaning: '+RECALL_WORD(sem));
     }});
     const overall = Math.round(.75*kw+.25*sem);
-    $('.kwv',node).textContent = kw+'%';   $('.kwb',node).style.width = kw+'%';
-    $('.semv',node).textContent = sem+'%'; $('.semb',node).style.width = sem+'%';
-    $('.allv',node).textContent = overall+'%'; $('.allb',node).style.width = overall+'%';
+    $('.kwv',node).textContent = RECALL_WORD(kw);   $('.kwb',node).style.width = kw+'%';
+    $('.semv',node).textContent = RECALL_WORD(sem); $('.semb',node).style.width = sem+'%';
+    $('.allv',node).textContent = RECALL_WORD(overall); $('.allb',node).style.width = overall+'%';
     $('.allb',node).classList.toggle('pass', overall>=85);
     $('.semb',node).classList.toggle('bleed', sem<50);
     $('.spendv',node).textContent = '₹'+spend;
     const msg = $('.buildmsg',node);
     if(overall>=85){
       const minimal = on.has('semantic') && on.has('passport') && on.has('graph') && !on.has('rewrite') && !on.has('rerank');
-      msg.textContent = minimal ? '✓ target hit at the MINIMUM spend: free rungs first, then the one paid rung the failing bar pointed at.'
-        : '✓ target hit. Could you get here cheaper? (hint: which bar was actually bleeding?)';
+      msg.textContent = minimal ? '✓ on target at the MINIMUM spend: free techniques first, then the one paid technique the failing bar pointed at.'
+        : '✓ on target. Could you get here cheaper? (hint: which bar was actually bleeding?)';
       msg.className = 'buildmsg ok-t';
-      if(minimal) toast('₹40. Free rungs first, then exactly the paid rung the semantic bar demanded. That is eval-driven build order.','good');
+      if(minimal) toast('Free techniques first, then exactly the paid technique the meaning bar demanded. That is eval-driven build order.','good');
     } else {
       msg.textContent = overall>=80 ? 'close: look at which bar is still red' : '';
       msg.className = 'buildmsg mut';
     }
-    pre.textContent = lines.join('\n')+(on.size?'\n\nread the trace: every rung you bought should move the bar that was failing.\nif it moved the healthy bar, you bought the wrong rung.':'');
+    pre.textContent = lines.join('\n')+(on.size?'\n\nread the trace: every technique you bought should move the bar that was failing.\nif it moved the healthy bar, you bought the wrong one.':'');
     state.results.build = { on:[...on] }; persist();
   }
   $$('input[data-r]',toggles).forEach(i=>i.onchange = ()=>{ i.checked?on.add(i.dataset.r):on.delete(i.dataset.r); calc(); });
@@ -958,7 +959,7 @@ function renderExChooser(step){
       <div class="glabel" hidden>the verdict</div>
       <div class="results"></div>`)}
     <div class="bts"><div class="btslabel mono">the field guide · six common corpora</div>
-      <div class="tblwrap"><table class="uc"><tr><th>use case</th><th>the floor</th><th>first paid rung</th><th>tool class</th></tr>${
+      <div class="tblwrap"><table class="uc"><tr><th>use case</th><th>the floor</th><th>first paid technique</th><th>tool class</th></tr>${
         FIELD_GUIDE.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td></tr>`).join('')
       }</table></div></div>
   </div>`);
@@ -984,11 +985,11 @@ function renderExChooser(step){
       return out;
     }
     out.push({ t:'The floor, always first', x:'Full-text search plus metadata filters inside the database you already run: Postgres or Supabase FTS, SQLite FTS5, or the Elasticsearch you already pay for. Measure recall@k on your pairs before buying anything.' });
-    if(m==='kw') out.push({ t:'Then stop', x:'Your split says the floor carries it. Stamp contextual passports at indexing (free) and hold. Do not add embeddings until the meaning bar bleeds in your own eval, not in a vendor demo.' });
+    if(m==='kw') out.push({ t:'Then stop', x:'Your split says the floor carries it. Apply contextual retrieval at indexing (free) and hold. Do not add embeddings until the meaning bar bleeds in your own eval, not in a vendor demo.' });
     if(m==='sem') out.push({ t:'Embeddings, inside the same database', x:'pgvector on the Postgres or Supabase you already run, plus the rewrite lexicon harvested from your failed queries. A dedicated vector database earns its place only when scale or latency genuinely breaks pgvector, and it arrives with a second system of record to keep in sync.' });
-    if(m==='rel') out.push({ t:'Graph from structure you already own', x:'Wikilinks, foreign keys, and folder trees are a free graph; route relationship queries to traversal. Multi-hop synthesis gets a bounded agentic loop (search as a tool, hard hop cap). A graph database earns its place only when traversal depth breaks the simple version.' });
-    if(c==='huge') out.push({ t:'At this size, ingestion is the product', x:'Chunk on meaning, stamp passports at indexing, and for long structured documents (the financial and legal pattern) consider reasoning over a document index (the PageIndex pattern) before any similarity machinery.' });
-    if(st==='mvp') out.push({ t:'MVP rule', x:'One paid rung maximum, no reranker, no second system of record. Ship, log the failed queries, and let the failing bucket name the next purchase.' });
+    if(m==='rel') out.push({ t:'Graph from structure you already own', x:'Existing links, foreign keys, and folder trees are a free graph; route relationship queries to traversal. Multi-hop questions get a bounded search loop (search as a tool, hard hop cap). A graph database earns its place only when traversal depth breaks the simple version.' });
+    if(c==='huge') out.push({ t:'At this size, ingestion is the product', x:'Chunk on meaning, apply contextual retrieval at indexing, and for long structured documents (the financial and legal pattern) consider reasoning over a document index (the PageIndex pattern) before any similarity machinery.' });
+    if(st==='mvp') out.push({ t:'MVP rule', x:'One paid technique maximum, no reranker, no second system of record. Ship, log the failed queries, and let the failing bucket name the next purchase.' });
     if(st==='prod') out.push({ t:'Production adds two non-negotiables', x:'A cross-encoder rerank stage over the top 20, and a faithfulness eval on every answer. Grounding is a launch gate, not a polish item.' });
     return out;
   }
@@ -1006,12 +1007,12 @@ function renderExChooser(step){
 
 /* ---------- receipt ---------- */
 function buildReceipt(){
-  const names = { passport:'passports', graph:'graph', semantic:'semantic', rewrite:'rewrite+HyDE', rerank:'rerank' };
+  const names = { passport:'contextual retrieval', graph:'graph', semantic:'semantic', rewrite:'rewrite+HyDE', rerank:'rerank' };
   const on = new Set((state.results.build && state.results.build.on) || []);
   let kw = 88, sem = 32, spend = 0;
   RUNGS.forEach(r=>{ if(on.has(r.id)){ kw = Math.min(97,kw+r.kw); sem = Math.min(97,sem+r.sem); spend += r.cost; } });
   const overall = Math.round(.75*kw+.25*sem);
-  const rungs = [...on].map(id=>names[id]||id);
+  const techniques = [...on].map(id=>names[id]||id);
   const r = state.results;
   return [
     '100xEngineers · Context Engineering → Advanced RAG · Done Equals receipt',
@@ -1020,7 +1021,7 @@ function buildReceipt(){
     'the map (P1): '+(r.mapRoute ? r.mapRoute.right+'/4 routed at the cheapest passing layer' : 'not attempted'),
     'router (9)  : '+(r.router ? r.router.right+'/6 correct · invoice ₹'+r.router.tot+' vs optimal ₹'+r.router.opt : 'not attempted'),
     'audit (10)  : '+(typeof r.audit==='boolean' ? (r.audit?'flagged exactly the invented sentence':'attempted; missed the invented sentence') : 'not attempted'),
-    'build (11)  : '+(rungs.length?rungs.join(' + '):'floor only')+' · spend ₹'+spend+'/1k queries · overall recall '+overall+'%',
+    'build (11)  : '+(techniques.length?techniques.join(' + '):'floor only')+' · spend ₹'+spend+'/1k queries · overall recall '+RECALL_WORD(overall),
     'chooser (12): '+((r.chooser && r.chooser.summary) || 'not attempted'),
     '',
     'Post this in your track channel. A facilitator verifies it against the lab;',
@@ -1072,7 +1073,6 @@ function renderZoomTable(step){
 function renderClosing(step){
   return el(`<div class="step">
     <div class="cert">
-      <div class="big">min(context)</div>
       <h1>${step.title}</h1>
       <p class="body">${step.body}</p>
       <p class="caption">Done Equals for this lecture: the Exercise 12 receipt, posted in your track channel, verified by a facilitator against this lab. The claim is not the gate; the receipt is.</p>
